@@ -1,0 +1,202 @@
+{
+  "name": "@haskou/ddd-kernel",
+  "version": "0.1.0",
+  "description": "Framework-agnostic DDD kernel for TypeScript applications and microservices.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js"
+    },
+    "./adapters/db": {
+      "types": "./dist/adapters/db/index.d.ts",
+      "import": "./dist/adapters/db/index.js"
+    },
+    "./adapters/db/in-memory": {
+      "types": "./dist/adapters/db/in-memory/index.d.ts",
+      "import": "./dist/adapters/db/in-memory/index.js"
+    },
+    "./adapters/db/mongo": {
+      "types": "./dist/adapters/db/mongo/index.d.ts",
+      "import": "./dist/adapters/db/mongo/index.js"
+    },
+    "./adapters/kernel": {
+      "types": "./dist/adapters/kernel/index.d.ts",
+      "import": "./dist/adapters/kernel/index.js"
+    },
+    "./adapters/kernel/console": {
+      "types": "./dist/adapters/kernel/console/index.d.ts",
+      "import": "./dist/adapters/kernel/console/index.js"
+    },
+    "./adapters/pubsub": {
+      "types": "./dist/adapters/pubsub/index.d.ts",
+      "import": "./dist/adapters/pubsub/index.js"
+    },
+    "./adapters/pubsub/amqp": {
+      "types": "./dist/adapters/pubsub/amqp/index.d.ts",
+      "import": "./dist/adapters/pubsub/amqp/index.js"
+    },
+    "./adapters/pubsub/in-memory": {
+      "types": "./dist/adapters/pubsub/in-memory/index.d.ts",
+      "import": "./dist/adapters/pubsub/in-memory/index.js"
+    },
+    "./adapters/ui": {
+      "types": "./dist/adapters/ui/index.d.ts",
+      "import": "./dist/adapters/ui/index.js"
+    },
+    "./adapters/ui/express": {
+      "types": "./dist/adapters/ui/express/index.d.ts",
+      "import": "./dist/adapters/ui/express/index.js"
+    },
+    "./adapters/ui/routes": {
+      "types": "./dist/adapters/ui/routes/index.d.ts",
+      "import": "./dist/adapters/ui/routes/index.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts/index.d.ts",
+      "import": "./dist/contracts/index.js"
+    },
+    "./contracts/db": {
+      "types": "./dist/contracts/db/index.d.ts",
+      "import": "./dist/contracts/db/index.js"
+    },
+    "./contracts/kernel": {
+      "types": "./dist/contracts/kernel/index.d.ts",
+      "import": "./dist/contracts/kernel/index.js"
+    },
+    "./contracts/pubsub": {
+      "types": "./dist/contracts/pubsub/index.d.ts",
+      "import": "./dist/contracts/pubsub/index.js"
+    },
+    "./contracts/ui": {
+      "types": "./dist/contracts/ui/index.d.ts",
+      "import": "./dist/contracts/ui/index.js"
+    },
+    "./dependency-injection": {
+      "types": "./dist/infrastructure/dependency-injection/index.d.ts",
+      "import": "./dist/infrastructure/dependency-injection/index.js"
+    },
+    "./domain": {
+      "types": "./dist/domain/index.d.ts",
+      "import": "./dist/domain/index.js"
+    },
+    "./express": {
+      "types": "./dist/adapters/ui/express/index.d.ts",
+      "import": "./dist/adapters/ui/express/index.js"
+    },
+    "./logs": {
+      "types": "./dist/infrastructure/logs/index.d.ts",
+      "import": "./dist/infrastructure/logs/index.js"
+    },
+    "./scheduler": {
+      "types": "./dist/infrastructure/scheduler/index.d.ts",
+      "import": "./dist/infrastructure/scheduler/index.js"
+    },
+    "./websocket": {
+      "types": "./dist/infrastructure/websocket/index.d.ts",
+      "import": "./dist/infrastructure/websocket/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "docs:build": "vitepress build docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:preview": "vitepress build docs && vitepress preview docs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint ./src --ext .ts",
+    "lint:fix": "eslint ./src --ext .ts --fix",
+    "prepack": "yarn build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "ddd",
+    "kernel",
+    "dependency-injection",
+    "microservices"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/amqplib": "^0.10.8",
+    "@types/express": "^5.0.6",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^26.0.0",
+    "@types/ws": "^8.18.1",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "amqplib": "^2.0.1",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-perfectionist": "^4.15.0",
+    "eslint-plugin-prettier": "^5.5.1",
+    "eslint-plugin-sonarjs": "^3.0.4",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "express": "5.2.1",
+    "fs-extra": "11.3.4",
+    "mongodb": "^7.3.0",
+    "node-cron": "^4.5.0",
+    "node-dependency-injection": "3.2.6",
+    "prettier": "^3.8.1",
+    "reflect-metadata": "^0.2.2",
+    "routing-controllers": "^0.11.3",
+    "typescript": "^5.9.3",
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.38",
+    "winston": "3.19.0",
+    "ws": "^8.21.0"
+  },
+  "peerDependencies": {
+    "amqplib": "^2.0.1",
+    "express": "5.2.1",
+    "fs-extra": "11.3.4",
+    "mongodb": "^7.3.0",
+    "node-cron": "^4.5.0",
+    "node-dependency-injection": "3.2.6",
+    "reflect-metadata": "^0.2.2",
+    "routing-controllers": "^0.11.3",
+    "winston": "3.19.0",
+    "ws": "^8.21.0"
+  },
+  "peerDependenciesMeta": {
+    "amqplib": {
+      "optional": true
+    },
+    "express": {
+      "optional": true
+    },
+    "fs-extra": {
+      "optional": true
+    },
+    "mongodb": {
+      "optional": true
+    },
+    "node-cron": {
+      "optional": true
+    },
+    "node-dependency-injection": {
+      "optional": true
+    },
+    "reflect-metadata": {
+      "optional": true
+    },
+    "routing-controllers": {
+      "optional": true
+    },
+    "winston": {
+      "optional": true
+    },
+    "ws": {
+      "optional": true
+    }
+  }
+}
