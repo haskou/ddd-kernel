@@ -4,14 +4,14 @@ import type { Log } from './Log.js';
 import type { WinstonLoggerOptions } from './WinstonLoggerOptions.js';
 
 export class WinstonLogger implements Log {
-  private _logger: Logger | undefined;
+  private loggerInstance: Logger | undefined;
   private prefix = '';
 
   constructor(private readonly options: WinstonLoggerOptions = {}) {}
 
   private get logger(): Logger {
-    if (!this._logger) {
-      this._logger = winston.createLogger({
+    if (!this.loggerInstance) {
+      this.loggerInstance = winston.createLogger({
         level: this.options.logLevel ?? process.env.LOG_LEVEL ?? 'info',
         transports: [
           new winston.transports.Console({
@@ -25,7 +25,7 @@ export class WinstonLogger implements Log {
       });
     }
 
-    return this._logger;
+    return this.loggerInstance;
   }
 
   private consoleFormat(): winston.Logform.Format {
@@ -35,7 +35,7 @@ export class WinstonLogger implements Log {
       }),
       format.colorize(),
       format.printf((entry) => {
-        const timestamp = String(entry.timestamp || '');
+        const timestamp = this.formatTimestamp(entry.timestamp);
         const level = String(entry.level);
         const message = this.formatConsoleMessage(entry.message);
 
@@ -78,6 +78,10 @@ export class WinstonLogger implements Log {
       .filter(([, value]) => value !== undefined)
       .map(([key, value]) => `${key}=${this.formatConsoleValue(value)}`)
       .join(' ');
+  }
+
+  private formatTimestamp(timestamp: unknown): string {
+    return String(timestamp || '');
   }
 
   private formatConsoleValue(value: unknown): string {
