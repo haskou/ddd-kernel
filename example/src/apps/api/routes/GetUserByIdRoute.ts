@@ -4,7 +4,7 @@ import { Response } from 'express';
 import { Get, JsonController, Param, Res } from 'routing-controllers';
 
 import UserByIdFinder from '../../../contexts/users/application/find-by-id/UserByIdFinder.js';
-import UserId from '../../../contexts/users/domain/value-objects/UserId.js';
+import { UserId } from '../../../contexts/users/domain/value-objects/UserId.js';
 
 @JsonController('/users')
 export default class GetUserByIdRoute extends Route {

@@ -1,6 +1,6 @@
-import User from '../domain/User.js';
 import UserRepository from '../domain/repositories/UserRepository.js';
-import UserId from '../domain/value-objects/UserId.js';
+import { User } from '../domain/User.js';
+import { UserId } from '../domain/value-objects/UserId.js';
 
 export default class InMemoryUserRepository extends UserRepository {
   private readonly users = new Map<string, User>([

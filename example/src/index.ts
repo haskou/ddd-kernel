@@ -18,6 +18,7 @@ const server = new ExpressKernelServer({
 });
 
 kernel.registerRoutes(GetUserByIdRoute);
+kernel.registerShutdownHook(() => server.close());
 
 await server.run();
 kernel.logger.info(`Application running on port ${process.env.PORT ?? 3000}`);

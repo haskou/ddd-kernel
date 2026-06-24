@@ -1,11 +1,18 @@
 # @haskou/ddd-kernel
 
+[![CI](https://github.com/haskou/ddd-kernel/actions/workflows/ci.yml/badge.svg)](https://github.com/haskou/ddd-kernel/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/haskou/ddd-kernel/branch/main/graph/badge.svg)](https://codecov.io/gh/haskou/ddd-kernel)
+[![npm](https://img.shields.io/npm/v/@haskou/ddd-kernel.svg)](https://www.npmjs.com/package/@haskou/ddd-kernel)
+[![license](https://img.shields.io/npm/l/@haskou/ddd-kernel.svg)](LICENSE.txt)
+
 Framework-agnostic DDD kernel for TypeScript applications and microservices.
 
 The expected startup pattern mirrors `pigeon-swarm-node`: application classes
 are exported as `default`, `node-dependency-injection` generates or loads
 `services.yaml`, and the kernel resolves consumers, schedulers, initializers and
-runtimes through `Kernel.di`.
+runtimes through the configured container. Constructor injection is the normal
+path for application services; `Kernel.di` and `this.get()` exist for framework
+boundaries and backwards compatibility.
 
 ```ts
 import { applicationConsumers } from './apps/ApplicationConsumers.js';
@@ -87,6 +94,18 @@ const kernel = new Kernel({
   sourceDirectory: 'src',
 });
 ```
+
+Prefer constructor injection for consumers, schedulers, routes, repositories and
+application services:
+
+```ts
+export default class RegisterUserWhenCreated {
+  constructor(private readonly finder: UserByIdFinder) {}
+}
+```
+
+Use `Kernel.di.getService(...)` only at the composition boundary or in legacy
+code that still extends a base class exposing `this.get()`.
 
 ## Example
 
