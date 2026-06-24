@@ -1,0 +1,14 @@
+{
+  "branches": 100,
+  "check-coverage": true,
+  "exclude": [
+    "src/index.ts",
+    "src/**/index.ts"
+  ],
+  "functions": 100,
+  "include": [
+    "src/**/*.ts"
+  ],
+  "lines": 100,
+  "statements": 100
+}
