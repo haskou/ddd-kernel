@@ -1,0 +1,44 @@
+name: Codecov
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+  push:
+    branches:
+      - master
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  coverage:
+    name: Upload coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run tests with LCOV coverage
+        run: yarn build && yarn c8 --reporter text --reporter lcov node --test "tests/**/*.test.mjs"
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          files: ./coverage/lcov.info
+          use_oidc: true
+          verbose: true
