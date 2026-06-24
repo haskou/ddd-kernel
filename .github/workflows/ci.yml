@@ -42,23 +42,14 @@ jobs:
       - name: Run typecheck
         run: yarn typecheck
 
-      - name: Run tests with coverage
-        run: yarn build && yarn c8 --all --src src --include "src/**/*.ts" --extension .ts --exclude-after-remap --reporter text --reporter lcov node --test "tests/**/*.test.mjs"
+      - name: Run tests
+        run: yarn test
 
       - name: Build docs
         run: yarn docs:build
 
       - name: Check npm package contents
         run: npm pack --dry-run
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: true
-          files: ./coverage/lcov.info
-          verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   publish:
     name: Publish to npm
