@@ -100,6 +100,12 @@ yarn typecheck
 yarn build
 ```
 
+## Documentation
+
+Full documentation is available at **https://haskou.github.io/ddd-kernel/**
+
+The documentation includes installation, quick start, examples, error handling, serialization notes, and one reference page per exported class.
+
 ## Scripts
 
 ```bash
