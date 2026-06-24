@@ -36,11 +36,17 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Run lint and tests with coverage
-        run: yarn lint && yarn build && yarn c8 --reporter text --reporter lcov node --test "tests/**/*.test.mjs"
+      - name: Run lint
+        run: yarn lint
 
       - name: Run typecheck
         run: yarn typecheck
+
+      - name: Run tests
+        run: yarn test
+
+      - name: Generate coverage report
+        run: yarn c8 report --reporter lcov
 
       - name: Build docs
         run: yarn docs:build
