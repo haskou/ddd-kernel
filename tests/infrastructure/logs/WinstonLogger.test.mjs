@@ -62,7 +62,10 @@ test('formats console messages from primitives, invalid JSON and structured JSON
 });
 
 test('uses environment defaults when logger options are omitted', async (context) => {
+  const originalCwd = process.cwd();
+
   const rootDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-logs-'));
+
   const originalLogUrl = process.env.LOG_URL;
   const originalServiceName = process.env.SERVICE_NAME;
   const originalLogLevel = process.env.LOG_LEVEL;
@@ -70,7 +73,9 @@ test('uses environment defaults when logger options are omitted', async (context
   process.env.LOG_URL = 'environment-logs';
   process.env.SERVICE_NAME = 'environment-service';
   process.env.LOG_LEVEL = 'info';
+
   process.chdir(rootDirectory);
+
   context.after(async () => {
     if (originalLogUrl === undefined) {
       delete process.env.LOG_URL;
@@ -90,7 +95,8 @@ test('uses environment defaults when logger options are omitted', async (context
       process.env.LOG_LEVEL = originalLogLevel;
     }
 
-    process.chdir('/home/hasko/Projects/ddd-kernel');
+    process.chdir(originalCwd);
+
     await rm(rootDirectory, { force: true, recursive: true });
   });
 
@@ -99,7 +105,7 @@ test('uses environment defaults when logger options are omitted', async (context
   logger.run();
   logger.info('environment message');
 
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
   const content = await readFile(
     path.join(rootDirectory, 'environment-logs', 'environment-service.log'),
@@ -143,7 +149,10 @@ test('uses built-in defaults when neither options nor environment are provided',
 
   await new Promise((resolve) => setTimeout(resolve, 50));
 
-  const content = await readFile(path.join(rootDirectory, 'logs', 'service.log'), 'utf8');
+  const content = await readFile(
+    path.join(rootDirectory, 'logs', 'service.log'),
+    'utf8',
+  );
 
   assert.match(content, /default message/);
 });
