@@ -13,7 +13,7 @@ import type { DefinitionMetadata } from './DefinitionMetadata.js';
 import type { DependencyInjectionOptions } from './DependencyInjectionOptions.js';
 
 export class DependencyInjection implements ServiceResolver {
-  private static _instance: DependencyInjection | undefined;
+  private static configuredInstance: DependencyInjection | undefined;
   private autowire: Autowire | undefined;
   private loader: YamlFileLoader | undefined;
   private readonly container: ContainerBuilder;
@@ -21,17 +21,17 @@ export class DependencyInjection implements ServiceResolver {
   public static configure(
     options: DependencyInjectionOptions,
   ): DependencyInjection {
-    DependencyInjection._instance = new DependencyInjection(options);
+    DependencyInjection.configuredInstance = new DependencyInjection(options);
 
-    return DependencyInjection._instance;
+    return DependencyInjection.configuredInstance;
   }
 
   public static get instance(): DependencyInjection {
-    if (!DependencyInjection._instance) {
+    if (!DependencyInjection.configuredInstance) {
       throw new Error('DependencyInjection has not been configured.');
     }
 
-    return DependencyInjection._instance;
+    return DependencyInjection.configuredInstance;
   }
 
   constructor(

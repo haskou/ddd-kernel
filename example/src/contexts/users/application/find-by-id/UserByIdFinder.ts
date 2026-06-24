@@ -1,6 +1,6 @@
-import User from '../../domain/User.js';
 import UserFinderService from '../../domain/services/UserFinderService.js';
-import UserId from '../../domain/value-objects/UserId.js';
+import { User } from '../../domain/User.js';
+import { UserId } from '../../domain/value-objects/UserId.js';
 
 export default class UserByIdFinder {
   constructor(private readonly userFinderService: UserFinderService) {}

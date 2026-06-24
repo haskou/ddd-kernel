@@ -1,12 +1,17 @@
 import cron from 'node-cron';
 
 import type { CronExpression } from './CronExpression.js';
+import type { SchedulerErrorPolicy } from './SchedulerErrorPolicy.js';
 
 import { Kernel } from '../../Kernel.js';
+import { DefaultSchedulerErrorPolicy } from './DefaultSchedulerErrorPolicy.js';
 import { InvalidParseCronExpressionError } from './InvalidParseCronExpressionError.js';
-import { ScheduledExecutionError } from './ScheduledExecutionError.js';
 
 export abstract class Scheduler {
+  constructor(
+    private readonly errorPolicy: SchedulerErrorPolicy = new DefaultSchedulerErrorPolicy(),
+  ) {}
+
   private parseCronExpression(): string {
     const expression = this.getCronExpression();
 
@@ -31,13 +36,12 @@ export abstract class Scheduler {
     try {
       Kernel.logger?.debug?.(`Scheduler: Executing ${this.getProcessName()}`);
       await this.execute();
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      const error = new ScheduledExecutionError(
-        `Error on ${this.getProcessName()}: ${errorMessage}`,
-      );
+    } catch (error: unknown) {
+      if (this.errorPolicy.shouldSkip(error)) {
+        return;
+      }
 
-      Kernel.logger?.error?.(error.message);
+      await this.errorPolicy.handle(error, this);
     }
   }
 

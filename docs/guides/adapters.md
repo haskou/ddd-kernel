@@ -10,6 +10,11 @@ Adapters live under the same high-level groups as contracts:
 An adapter should implement a contract or abstract class from the domain/kernel
 surface and stay free of application-specific concepts.
 
+The core kernel owns lifecycle and dependency injection. It should not know
+about concrete HTTP frameworks, AMQP clients, Mongo drivers or Winston loggers.
+Those belong in optional adapters and should be imported only by applications
+that need them.
+
 ```ts
 import type { DomainEventPublisher } from '@haskou/ddd-kernel/domain';
 

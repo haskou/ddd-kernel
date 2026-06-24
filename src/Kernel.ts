@@ -2,10 +2,16 @@ import path from 'node:path';
 
 import type { Consumer } from './adapters/pubsub/index.js';
 import type { Route } from './adapters/ui/routes/index.js';
+import type {
+  ConsumerMiddleware,
+  KernelLogger,
+  ShutdownHook,
+} from './contracts/index.js';
 import type { ServiceClass } from './infrastructure/dependency-injection/index.js';
 import type { Initializer, Runtime } from './infrastructure/lifecycle/index.js';
 import type { Scheduler } from './infrastructure/scheduler/index.js';
 import type { KernelOptions } from './kernel/KernelOptions.js';
+import type { ShutdownCandidate } from './kernel/ShutdownCandidate.js';
 
 import { ConsoleKernelLogger } from './adapters/kernel/index.js';
 import { DependencyInjection } from './infrastructure/dependency-injection/index.js';
@@ -13,14 +19,26 @@ import { DependencyInjection } from './infrastructure/dependency-injection/index
 export type { KernelOptions } from './kernel/KernelOptions.js';
 
 export class Kernel {
-  private static _consumers: Consumer[] = [];
-  private static _di: DependencyInjection;
-  private static _logger = new ConsoleKernelLogger();
-  private static _routes: ServiceClass<Route>[] = [];
-  private static _schedulers: Scheduler[] = [];
+  private static readonly stateKey = Symbol.for(
+    '@haskou/ddd-kernel/kernel-state',
+  );
 
-  constructor(private readonly options: KernelOptions = {}) {
-    Kernel._logger = options.logger ?? new ConsoleKernelLogger();
+  private readonly consumerMiddlewares: ConsumerMiddleware[] = [];
+  private readonly consumersList: Consumer[] = [];
+  private readonly loggerInstance: KernelLogger;
+  private readonly routesList: ServiceClass<Route>[] = [];
+  private readonly schedulersList: Scheduler[] = [];
+  private readonly shutdownHooks: ShutdownHook[] = [];
+  private dependencyInjectionInstance: DependencyInjection | undefined;
+
+  private static get state(): { activeKernel?: Kernel } {
+    const stateContainer = globalThis as typeof globalThis & {
+      [Kernel.stateKey]?: { activeKernel?: Kernel };
+    };
+
+    stateContainer[Kernel.stateKey] = stateContainer[Kernel.stateKey] ?? {};
+
+    return stateContainer[Kernel.stateKey] as { activeKernel?: Kernel };
   }
 
   public static get configDirectory(): string {
@@ -28,19 +46,19 @@ export class Kernel {
   }
 
   public static get consumers(): Consumer[] {
-    return Kernel._consumers;
+    return Kernel.getActiveKernel().consumers;
+  }
+
+  public static get consumerMiddleware(): ConsumerMiddleware[] {
+    return Kernel.getActiveKernel().consumerMiddleware;
   }
 
   public static get di(): DependencyInjection {
-    return Kernel._di;
+    return Kernel.getActiveKernel().di;
   }
 
-  public static get logger(): ConsoleKernelLogger {
-    return Kernel._logger;
-  }
-
-  public get logger(): ConsoleKernelLogger {
-    return Kernel.logger;
+  public static get logger(): KernelLogger {
+    return Kernel.getActiveKernel().logger;
   }
 
   public static get rootDirectory(): string {
@@ -48,46 +66,108 @@ export class Kernel {
   }
 
   public static get routes(): ServiceClass<Route>[] {
-    return Kernel._routes;
+    return Kernel.getActiveKernel().routes;
   }
 
   public static get schedulers(): Scheduler[] {
-    return Kernel._schedulers;
+    return Kernel.getActiveKernel().schedulers;
   }
 
   public static get sourceDirectory(): string {
     return path.resolve(Kernel.rootDirectory, 'src');
   }
 
+  private static getActiveKernel(): Kernel {
+    if (!Kernel.state.activeKernel) {
+      Kernel.state.activeKernel = new Kernel();
+    }
+
+    return Kernel.state.activeKernel;
+  }
+
+  constructor(private readonly options: KernelOptions = {}) {
+    this.loggerInstance = options.logger ?? new ConsoleKernelLogger();
+    this.dependencyInjectionInstance = options.di;
+    Kernel.state.activeKernel = this;
+  }
+
+  private async closeCandidate(candidate: ShutdownCandidate): Promise<void> {
+    if (candidate.shutdown) {
+      await candidate.shutdown();
+
+      return;
+    }
+
+    if (candidate.close) {
+      await candidate.close();
+
+      return;
+    }
+
+    if (candidate.stop) {
+      await candidate.stop();
+
+      return;
+    }
+
+    if (candidate.flush) {
+      await candidate.flush();
+    }
+  }
+
   private getConsumerFromClass(
     ClassDefinition: ServiceClass<Consumer>,
   ): Consumer {
-    return Kernel.di.getService<Consumer>(ClassDefinition);
+    return this.di.getService<Consumer>(ClassDefinition);
   }
 
   private getInitializerFromClass(
     ClassDefinition: ServiceClass<Initializer>,
   ): Initializer {
-    return Kernel.di.getService<Initializer>(ClassDefinition);
+    return this.di.getService<Initializer>(ClassDefinition);
   }
 
   private getRuntimeFromClass(ClassDefinition: ServiceClass<Runtime>): Runtime {
-    return Kernel.di.getService<Runtime>(ClassDefinition);
+    return this.di.getService<Runtime>(ClassDefinition);
   }
 
   private getSchedulerFromClass(
     ClassDefinition: ServiceClass<Scheduler>,
   ): Scheduler {
-    return Kernel.di.getService<Scheduler>(ClassDefinition);
+    return this.di.getService<Scheduler>(ClassDefinition);
+  }
+
+  public get consumers(): Consumer[] {
+    return this.consumersList;
+  }
+
+  public get consumerMiddleware(): ConsumerMiddleware[] {
+    return this.consumerMiddlewares;
   }
 
   public get di(): DependencyInjection {
-    return Kernel.di;
+    if (!this.dependencyInjectionInstance) {
+      throw new Error('Kernel dependency injection has not been initialized.');
+    }
+
+    return this.dependencyInjectionInstance;
+  }
+
+  public get logger(): KernelLogger {
+    return this.loggerInstance;
+  }
+
+  public get routes(): ServiceClass<Route>[] {
+    return this.routesList;
+  }
+
+  public get schedulers(): Scheduler[] {
+    return this.schedulersList;
   }
 
   public async dependencyInjection(): Promise<void> {
-    Kernel._di =
-      this.options.di ??
+    this.dependencyInjectionInstance =
+      this.dependencyInjectionInstance ??
       DependencyInjection.configure({
         containerBuild: process.env.CONTAINER_BUILD === 'true',
         servicesYamlPath:
@@ -96,55 +176,65 @@ export class Kernel {
         sourceDirectory: this.options.sourceDirectory ?? Kernel.sourceDirectory,
       });
 
-    await Kernel._di.compile();
+    await this.dependencyInjectionInstance.compile();
   }
 
   public getRoutes(): ServiceClass<Route>[] {
-    return Kernel.routes;
+    return this.routes;
+  }
+
+  public registerConsumerMiddleware(
+    ...middlewares: ConsumerMiddleware[]
+  ): void {
+    this.consumerMiddlewares.push(...middlewares);
   }
 
   public registerConsumers(
     ...ClassDefinitions: ServiceClass<Consumer>[]
   ): void {
     for (const ClassDefinition of ClassDefinitions) {
-      Kernel._consumers.push(this.getConsumerFromClass(ClassDefinition));
+      this.consumersList.push(this.getConsumerFromClass(ClassDefinition));
     }
   }
 
   public registerConsumerInstances(...consumers: Consumer[]): void {
-    Kernel._consumers.push(...consumers);
+    this.consumersList.push(...consumers);
   }
 
   public registerRoutes(...ClassDefinitions: ServiceClass<Route>[]): void {
-    Kernel._routes.push(...ClassDefinitions);
+    this.routesList.push(...ClassDefinitions);
   }
 
   public registerSchedulers(
     ...ClassDefinitions: ServiceClass<Scheduler>[]
   ): void {
     for (const ClassDefinition of ClassDefinitions) {
-      Kernel._schedulers.push(this.getSchedulerFromClass(ClassDefinition));
+      this.schedulersList.push(this.getSchedulerFromClass(ClassDefinition));
     }
   }
 
   public registerSchedulerInstances(...schedulers: Scheduler[]): void {
-    Kernel._schedulers.push(...schedulers);
+    this.schedulersList.push(...schedulers);
+  }
+
+  public registerShutdownHook(hook: ShutdownHook): void {
+    this.shutdownHooks.push(hook);
   }
 
   public removeConsumers(): void {
-    Kernel._consumers = [];
+    this.consumersList.length = 0;
   }
 
   public removeRoutes(): void {
-    Kernel._routes = [];
+    this.routesList.length = 0;
   }
 
   public removeSchedulers(): void {
-    Kernel._schedulers = [];
+    this.schedulersList.length = 0;
   }
 
   public async runConsumers(): Promise<void> {
-    for (const consumer of Kernel.consumers) {
+    for (const consumer of this.consumersList) {
       await consumer.init();
     }
   }
@@ -161,7 +251,12 @@ export class Kernel {
     ...ClassDefinitions: ServiceClass<Runtime>[]
   ): Promise<void> {
     for (const ClassDefinition of ClassDefinitions) {
-      await this.getRuntimeFromClass(ClassDefinition).run();
+      const runtime = this.getRuntimeFromClass(ClassDefinition);
+
+      await runtime.run();
+      this.registerShutdownHook(() =>
+        this.closeCandidate(runtime as ShutdownCandidate),
+      );
     }
   }
 
@@ -172,12 +267,29 @@ export class Kernel {
 
     await scheduler.runOnce();
     await scheduler.init();
+    this.schedulersList.push(scheduler);
   }
 
   public async runSchedulers(): Promise<void> {
-    for (const scheduler of Kernel.schedulers) {
+    for (const scheduler of this.schedulersList) {
       await scheduler.init();
     }
+  }
+
+  public async shutdown(): Promise<void> {
+    for (const consumer of [...this.consumersList].reverse()) {
+      await this.closeCandidate(consumer as ShutdownCandidate);
+    }
+
+    for (const scheduler of [...this.schedulersList].reverse()) {
+      await this.closeCandidate(scheduler as ShutdownCandidate);
+    }
+
+    for (const hook of [...this.shutdownHooks].reverse()) {
+      await hook();
+    }
+
+    await this.closeCandidate(this.loggerInstance as ShutdownCandidate);
   }
 }
 

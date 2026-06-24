@@ -19,6 +19,7 @@ kernel.registerConsumers(...applicationConsumers);
 kernel.registerSchedulers(...recurringSchedulers);
 
 const server = new ExpressKernelServer({ kernel, port: 3000 });
+kernel.registerShutdownHook(() => server.close());
 
 await server.run();
 await kernel.runConsumers();
@@ -29,3 +30,13 @@ kernel.logger.info('Application running on port 3000');
 
 `CONTAINER_BUILD=true` regenerates `config/container/services.yaml`. Without it,
 the generated YAML is loaded.
+
+Call `kernel.shutdown()` from your process signal handlers to stop consumers,
+stop schedulers, close servers, flush logs and release connections registered
+through shutdown hooks:
+
+```ts
+process.once('SIGTERM', () => {
+  void kernel.shutdown();
+});
+```

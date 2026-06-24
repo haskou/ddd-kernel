@@ -1,5 +1,7 @@
 export * from './CronExpression.js';
+export * from './DefaultSchedulerErrorPolicy.js';
 export * from './InvalidParseCronExpressionError.js';
 export * from './ScheduledExecutionError.js';
 export * from './Scheduler.js';
+export * from './SchedulerErrorPolicy.js';
 export { default } from './Scheduler.js';

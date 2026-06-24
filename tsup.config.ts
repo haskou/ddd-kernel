@@ -1,0 +1,56 @@
+import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  clean: true,
+  dts: true,
+  entry: {
+    index: 'src/index.ts',
+    'adapters/index': 'src/adapters/index.ts',
+    'adapters/db/index': 'src/adapters/db/index.ts',
+    'adapters/db/in-memory/index': 'src/adapters/db/in-memory/index.ts',
+    'adapters/db/mongo/index': 'src/adapters/db/mongo/index.ts',
+    'adapters/kernel/index': 'src/adapters/kernel/index.ts',
+    'adapters/kernel/console/index': 'src/adapters/kernel/console/index.ts',
+    'adapters/pubsub/index': 'src/adapters/pubsub/index.ts',
+    'adapters/pubsub/amqp/index': 'src/adapters/pubsub/amqp/index.ts',
+    'adapters/pubsub/in-memory/index': 'src/adapters/pubsub/in-memory/index.ts',
+    'adapters/ui/index': 'src/adapters/ui/index.ts',
+    'adapters/ui/express/index': 'src/adapters/ui/express/index.ts',
+    'adapters/ui/routes/index': 'src/adapters/ui/routes/index.ts',
+    'contracts/index': 'src/contracts/index.ts',
+    'contracts/db/index': 'src/contracts/db/index.ts',
+    'contracts/kernel/index': 'src/contracts/kernel/index.ts',
+    'contracts/pubsub/index': 'src/contracts/pubsub/index.ts',
+    'contracts/ui/index': 'src/contracts/ui/index.ts',
+    'domain/index': 'src/domain/index.ts',
+    'errors/index': 'src/errors/index.ts',
+    'infrastructure/dependency-injection/index':
+      'src/infrastructure/dependency-injection/index.ts',
+    'infrastructure/express/index': 'src/infrastructure/express/index.ts',
+    'infrastructure/lifecycle/index': 'src/infrastructure/lifecycle/index.ts',
+    'infrastructure/logs/index': 'src/infrastructure/logs/index.ts',
+    'infrastructure/scheduler/index': 'src/infrastructure/scheduler/index.ts',
+    'infrastructure/websocket/index': 'src/infrastructure/websocket/index.ts',
+  },
+  external: [
+    'amqplib',
+    'express',
+    'fs-extra',
+    'mongodb',
+    'node-cron',
+    'node-dependency-injection',
+    'reflect-metadata',
+    'routing-controllers',
+    'winston',
+    'ws',
+  ],
+  format: ['esm', 'cjs'],
+  outExtension({ format }) {
+    return {
+      js: format === 'cjs' ? '.cjs' : '.js',
+    };
+  },
+  splitting: false,
+  sourcemap: true,
+  target: 'es2022',
+});

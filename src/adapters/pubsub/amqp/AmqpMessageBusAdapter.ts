@@ -1,5 +1,6 @@
 import amqplib, {
   type Channel,
+  type ChannelModel,
   type ConsumeMessage,
   type GetMessage,
   type MessagePropertyHeaders,
@@ -24,7 +25,8 @@ import { NoFailedMessagesError } from './NoFailedMessagesError.js';
 export default class AmqpMessageBusAdapter
   implements DomainEventConsumer, DomainEventPublisher
 {
-  private _channel: Channel | undefined;
+  private channelInstance: Channel | undefined;
+  private connection: ChannelModel | undefined;
   private readonly delayConsumers: string[] = [];
   private exchange: string;
 
@@ -248,9 +250,9 @@ export default class AmqpMessageBusAdapter
   }
 
   private async connect(): Promise<void> {
-    const connection = await amqplib.connect(this.getConnectionDsn());
-    this._channel = await connection.createChannel();
-    this._channel
+    this.connection = await amqplib.connect(this.getConnectionDsn());
+    this.channelInstance = await this.connection.createChannel();
+    this.channelInstance
       .on('close', async () => {
         this.logger?.error('AMQP message bus event close');
         await this.reconnect();
@@ -276,19 +278,19 @@ export default class AmqpMessageBusAdapter
       return connection.createChannel();
     }
 
-    if (!this._channel) {
+    if (!this.channelInstance) {
       await this.connect();
     }
 
-    if (!this._channel) {
+    if (!this.channelInstance) {
       throw new Error('AMQP channel could not be created.');
     }
 
-    await this._channel.assertExchange(this.exchange, 'topic', {
+    await this.channelInstance.assertExchange(this.exchange, 'topic', {
       durable: true,
     });
 
-    return this._channel;
+    return this.channelInstance;
   }
 
   private getConnectionDsn(): string {
@@ -455,5 +457,12 @@ export default class AmqpMessageBusAdapter
         this.opts(event),
       );
     }
+  }
+
+  public async close(): Promise<void> {
+    await this.channelInstance?.close();
+    await this.connection?.close();
+    this.channelInstance = undefined;
+    this.connection = undefined;
   }
 }
