@@ -1,9 +1,14 @@
-# @haskou/ddd-kernel
 
 [![CI](https://github.com/haskou/ddd-kernel/actions/workflows/ci.yml/badge.svg)](https://github.com/haskou/ddd-kernel/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/haskou/ddd-kernel/branch/main/graph/badge.svg)](https://codecov.io/gh/haskou/ddd-kernel)
 [![npm](https://img.shields.io/npm/v/@haskou/ddd-kernel.svg)](https://www.npmjs.com/package/@haskou/ddd-kernel)
 [![license](https://img.shields.io/npm/l/@haskou/ddd-kernel.svg)](LICENSE)
+
+## Status
+
+This package is currently in early 0.x development. It is used to extract reusable DDD infrastructure from real TypeScript services, but public APIs may still change while the kernel is being hardened.
+
+# @haskou/ddd-kernel
 
 Framework-agnostic DDD kernel for TypeScript applications and microservices.
 
