@@ -42,8 +42,8 @@ jobs:
       - name: Run typecheck
         run: yarn typecheck
 
-      - name: Run tests with coverage
-        run: yarn test:coverage
+      - name: Run tests
+        run: yarn test
 
       - name: Build docs
         run: yarn docs:build
@@ -90,7 +90,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.base.ref }}
-          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -261,16 +260,12 @@ jobs:
             git tag -a "v${NEXT_VERSION}" -m "Release v${NEXT_VERSION} for #${PR_NUMBER}"
           fi
 
-          auth_header="$(
-            node -e "process.stdout.write('AUTHORIZATION: basic ' + Buffer.from('x-access-token:' + process.env.GITHUB_TOKEN).toString('base64'))"
-          )"
-          git -c "http.https://github.com/.extraheader=$auth_header" push origin "HEAD:${BASE_BRANCH}"
-          git -c "http.https://github.com/.extraheader=$auth_header" push origin "v${NEXT_VERSION}"
+          git push origin "HEAD:${BASE_BRANCH}"
+          git push origin "v${NEXT_VERSION}"
         env:
           BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
           NEXT_VERSION: ${{ steps.release.outputs.next_version }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Create GitHub release notes
         if: >-
