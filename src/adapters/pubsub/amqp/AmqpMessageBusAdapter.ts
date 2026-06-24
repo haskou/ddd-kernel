@@ -53,10 +53,11 @@ export default class AmqpMessageBusAdapter
   }
 
   private get retryDelayInMilliseconds(): number {
+    const retryDelayFromEnv = Number(process.env.TRANSPORT_RETRY_DELAY);
+
     return (
       this.options.retryDelayInMilliseconds ??
-      Number(process.env.TRANSPORT_RETRY_DELAY) ??
-      1000
+      (Number.isFinite(retryDelayFromEnv) ? retryDelayFromEnv : 1000)
     );
   }
 

@@ -113,3 +113,7 @@ yarn lint
 yarn typecheck
 yarn build
 ```
+
+## License
+
+MIT. See [LICENSE.txt](LICENSE.txt).
