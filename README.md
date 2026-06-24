@@ -3,7 +3,7 @@
 [![CI](https://github.com/haskou/ddd-kernel/actions/workflows/ci.yml/badge.svg)](https://github.com/haskou/ddd-kernel/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/haskou/ddd-kernel/branch/main/graph/badge.svg)](https://codecov.io/gh/haskou/ddd-kernel)
 [![npm](https://img.shields.io/npm/v/@haskou/ddd-kernel.svg)](https://www.npmjs.com/package/@haskou/ddd-kernel)
-[![license](https://img.shields.io/npm/l/@haskou/ddd-kernel.svg)](LICENSE.txt)
+[![license](https://img.shields.io/npm/l/@haskou/ddd-kernel.svg)](LICENSE)
 
 Framework-agnostic DDD kernel for TypeScript applications and microservices.
 
@@ -135,4 +135,4 @@ yarn build
 
 ## License
 
-MIT. See [LICENSE.txt](LICENSE.txt).
+MIT. See [LICENSE](LICENSE).
