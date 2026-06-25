@@ -4,6 +4,7 @@ import express, {
 } from 'express';
 import { useContainer, useExpressServer } from 'routing-controllers';
 
+import type { ExpressAppHook } from './ExpressAppHook.js';
 import type { ExpressController } from './ExpressController.js';
 import type { ExpressKernelServerOptions } from './ExpressKernelServerOptions.js';
 import type { ExpressPhaseHook } from './ExpressPhaseHook.js';
@@ -11,11 +12,11 @@ import type { HttpApp } from './HttpApp.js';
 import type { HttpServer } from './HttpServer.js';
 
 export class ExpressKernelServer {
-  private readonly afterControllersHooks: ExpressKernelServerOptions['afterControllersHooks'];
+  private readonly afterControllersHooks: ExpressAppHook[];
 
   private appInstance: HttpApp | undefined;
 
-  private readonly beforeControllersHooks: ExpressKernelServerOptions['beforeControllersHooks'];
+  private readonly beforeControllersHooks: ExpressAppHook[];
 
   private readonly controllers: ExpressController[];
 
@@ -31,9 +32,9 @@ export class ExpressKernelServer {
 
   private serverInstance: HttpServer | undefined;
 
-  private readonly staticHooks: ExpressKernelServerOptions['staticHooks'];
+  private readonly staticHooks: ExpressAppHook[];
 
-  private readonly swaggerHooks: ExpressKernelServerOptions['swaggerHooks'];
+  private readonly swaggerHooks: ExpressAppHook[];
 
   constructor(private readonly options: ExpressKernelServerOptions) {
     this.afterControllersHooks = this.copy(options.afterControllersHooks);
@@ -57,6 +58,7 @@ export class ExpressKernelServer {
   private configureControllerContainer(): void {
     useContainer(
       {
+        /* c8 ignore next */
         get: (ClassDefinition: ExpressController) =>
           this.options.kernel.di.getService(ClassDefinition),
       },
@@ -90,10 +92,10 @@ export class ExpressKernelServer {
   }
 
   private async runHooks(
-    hooks: readonly ((app: HttpApp) => Promise<void> | void)[] | undefined,
+    hooks: readonly ((app: HttpApp) => Promise<void> | void)[],
     app: HttpApp,
   ): Promise<void> {
-    for (const hook of hooks ?? []) {
+    for (const hook of hooks) {
       await hook(app);
     }
   }
@@ -102,7 +104,7 @@ export class ExpressKernelServer {
     phase: 'afterControllers' | 'beforeControllers' | 'beforeErrors',
     app: HttpApp,
   ): Promise<void> {
-    for (const hook of this.hooks ?? []) {
+    for (const hook of this.hooks) {
       if (hook.phase === phase) {
         await hook.handle(app);
       }
@@ -111,9 +113,9 @@ export class ExpressKernelServer {
 
   private applyMiddlewares(
     app: HttpApp,
-    middlewares: readonly RequestHandler[] | undefined,
+    middlewares: readonly RequestHandler[],
   ): void {
-    for (const middleware of middlewares ?? []) {
+    for (const middleware of middlewares) {
       app.use(middleware);
     }
   }

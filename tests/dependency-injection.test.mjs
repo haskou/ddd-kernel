@@ -212,6 +212,26 @@ test('overrides a token that is not registered in the container', async () => {
   assert.equal(dependencyInjection.getService(ExternalRepository), repository);
 });
 
+test('overrides a literal token that is not registered in the container', async () => {
+  const repository = new InMemoryRepository();
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: 'repository',
+        useValue: repository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.equal(dependencyInjection.getService('repository'), repository);
+});
+
 test('registers override classes that are not already in the container', async () => {
   class ExternalRepository extends ContractRepository {}
 
@@ -436,6 +456,7 @@ test('ignores non-reference definition arguments while searching override refere
     }),
     ['service-id'],
   );
+  assert.deepEqual(dependencyInjection.getDefinitionArgumentReferences({}), []);
   assert.equal(
     dependencyInjection.serviceIdReferencesService(
       serviceIdFor(ConcreteRepository),

@@ -295,6 +295,39 @@ test('uses the default HTTP error handler when none is registered', async () => 
   }
 });
 
+test('formats Error instances with the default HTTP error handler', async () => {
+  const server = new ExpressKernelServer({
+    hooks: [
+      {
+        handle: (app) => {
+          app.get('/default-error-instance', (request, response, next) => {
+            void request;
+            void response;
+            next(new Error('typed failure'));
+          });
+        },
+        phase: 'beforeControllers',
+      },
+    ],
+    kernel: new Kernel(),
+    port: 0,
+  });
+
+  await server.run();
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/default-error-instance`,
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 500);
+    assert.deepEqual(body, { error: 'typed failure' });
+  } finally {
+    await server.close();
+  }
+});
+
 test('handles common HTTP errors with the shared HTTP error handler', async () => {
   const server = new ExpressKernelServer({
     hooks: [
