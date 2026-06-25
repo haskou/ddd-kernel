@@ -10,12 +10,14 @@ import type {
 import type { ServiceClass } from './infrastructure/dependency-injection/index.js';
 import type { Initializer, Runtime } from './infrastructure/lifecycle/index.js';
 import type { Scheduler } from './infrastructure/scheduler/index.js';
+import type { KernelDependencyInjectionOptions } from './kernel/KernelDependencyInjectionOptions.js';
 import type { KernelOptions } from './kernel/KernelOptions.js';
 import type { ShutdownCandidate } from './kernel/ShutdownCandidate.js';
 
 import { ConsoleKernelLogger } from './adapters/kernel/index.js';
 import { DependencyInjection } from './infrastructure/dependency-injection/index.js';
 
+export type { KernelDependencyInjectionOptions } from './kernel/KernelDependencyInjectionOptions.js';
 export type { KernelOptions } from './kernel/KernelOptions.js';
 
 export class Kernel {
@@ -169,16 +171,31 @@ export class Kernel {
     return this.schedulersList;
   }
 
-  public async dependencyInjection(): Promise<void> {
+  private getDependencyInjectionOptions(
+    options: KernelDependencyInjectionOptions = {},
+  ): Required<KernelDependencyInjectionOptions> {
+    return {
+      containerBuild:
+        options.containerBuild ?? process.env.CONTAINER_BUILD === 'true',
+      servicesYamlPath:
+        options.servicesYamlPath ??
+        this.options.servicesYamlPath ??
+        path.resolve(Kernel.configDirectory, 'container', 'services.yaml'),
+      sourceDirectory:
+        options.sourceDirectory ??
+        this.options.sourceDirectory ??
+        Kernel.sourceDirectory,
+    };
+  }
+
+  public async dependencyInjection(
+    options: KernelDependencyInjectionOptions = {},
+  ): Promise<void> {
     this.dependencyInjectionInstance =
       this.dependencyInjectionInstance ??
-      DependencyInjection.configure({
-        containerBuild: process.env.CONTAINER_BUILD === 'true',
-        servicesYamlPath:
-          this.options.servicesYamlPath ??
-          path.resolve(Kernel.configDirectory, 'container', 'services.yaml'),
-        sourceDirectory: this.options.sourceDirectory ?? Kernel.sourceDirectory,
-      });
+      DependencyInjection.configure(
+        this.getDependencyInjectionOptions(options),
+      );
 
     await this.dependencyInjectionInstance.compile();
   }

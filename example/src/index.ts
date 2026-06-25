@@ -23,7 +23,9 @@ const kernel = new Kernel({
   sourceDirectory: path.resolve(rootDirectory, 'src'),
 });
 
-await kernel.dependencyInjection();
+await kernel.dependencyInjection({
+  containerBuild: process.env.NODE_ENV !== 'production',
+});
 
 kernel.registerConsumerMiddleware(
   new CorrelationConsumerMiddleware(),

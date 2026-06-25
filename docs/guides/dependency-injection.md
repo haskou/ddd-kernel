@@ -29,6 +29,19 @@ export default class UserByIdFinder {
 You normally do not call `registerFactory`. The generated `services.yaml` is the
 composition metadata.
 
+Build the container explicitly from the kernel when you want to regenerate that
+metadata:
+
+```ts
+await kernel.dependencyInjection({
+  containerBuild: process.env.NODE_ENV !== 'production',
+});
+```
+
+If `containerBuild` is omitted, the kernel falls back to
+`CONTAINER_BUILD=true`. That keeps older applications working while allowing new
+bootstraps to keep the choice close to application startup code.
+
 Avoid passing `Kernel.di` into consumers, schedulers or services as a normal
 dependency. It makes tests depend on global container state and hides the real
 collaborators a class needs.
