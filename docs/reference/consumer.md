@@ -34,7 +34,8 @@ kernel.registerConsumerMiddleware({
 
 Middleware receives the event, the next pipeline callback and a
 `ConsumerExecutionContext` containing queue, exchange, event id, correlation id
-and causation id.
+and causation id. Transport adapters can also attach metadata, such as AMQP
+headers or retry counts, to `context.metadata`.
 
 ## Built-in Middleware
 
@@ -61,5 +62,7 @@ kernel.registerConsumerMiddleware(
 );
 ```
 
-Use a custom `IdempotencyStore` for durable idempotency. The in-memory store is
+Use a custom `IdempotencyStore` for durable idempotency. Prefer stores that
+implement atomic `claim`, `commit` and `release` methods so duplicate messages
+cannot pass a non-atomic `has`/`mark` check concurrently. The in-memory store is
 only useful for tests and single-process applications.

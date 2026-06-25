@@ -38,18 +38,29 @@ wrapping the adapter in an application-local class.
 import AmqpMessageBusAdapter from '@haskou/ddd-kernel/adapters/pubsub/amqp';
 
 const messageBus = new AmqpMessageBusAdapter({
+  publisherHookErrorPolicy: {
+    handleAfterPublishError(error, context) {
+      logger.error(
+        `Post-publish hook failed for ${context.topic}: ${String(error)}`,
+      );
+    },
+    shouldFailAfterPublish() {
+      return false;
+    },
+  },
   publisherHooks: [
     {
-      afterPublish: async ({ message }) => {
-        await websocketPublisher.publish(message);
+      afterPublish: async ({ domainEvent, message }) => {
+        await websocketPublisher.publish(domainEvent ?? message);
       },
     },
   ],
 });
 ```
 
-Custom adapters should implement the `MessageBus` contract and delegate hook
-execution through `PublisherHookPipeline`:
+Custom generic adapters should implement the `MessageBus` contract. Domain-event
+adapters should implement `DomainMessageBus`. Both can delegate hook execution
+through `PublisherHookPipeline`:
 
 ```ts
 import {

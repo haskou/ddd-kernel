@@ -37,16 +37,19 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
     `
       import type { ConsumerMiddleware } from '@haskou/ddd-kernel/contracts/kernel';
       import type { MessageBus, PublisherHook } from '@haskou/ddd-kernel/contracts/pubsub';
+      import type { DomainMessageBus } from '@haskou/ddd-kernel/domain';
       import type { SchedulerErrorPolicy } from '@haskou/ddd-kernel/scheduler';
       import { ExpressKernelServer } from '@haskou/ddd-kernel/adapters/ui/express';
 
       const middleware: ConsumerMiddleware | undefined = undefined;
       const messageBus: MessageBus | undefined = undefined;
+      const domainMessageBus: DomainMessageBus | undefined = undefined;
       const hook: PublisherHook | undefined = undefined;
       const policy: SchedulerErrorPolicy | undefined = undefined;
 
       void middleware;
       void messageBus;
+      void domainMessageBus;
       void hook;
       void policy;
       void ExpressKernelServer;

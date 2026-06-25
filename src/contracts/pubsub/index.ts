@@ -9,4 +9,5 @@ export * from './MessageMetadata.js';
 export * from './PubSub.js';
 export * from './PublishContext.js';
 export * from './PublisherHook.js';
+export * from './PublisherHookErrorPolicy.js';
 export * from './Subscription.js';

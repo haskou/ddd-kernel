@@ -2,6 +2,7 @@ export * from './Consumer.js';
 export * from './ConsumerMiddlewarePipeline.js';
 export * from './CorrelationConsumerMiddleware.js';
 export * from './CorrelationConsumerMiddlewareOptions.js';
+export * from './DefaultPublisherHookErrorPolicy.js';
 export * from './IdempotencyConsumerMiddleware.js';
 export * from './IdempotencyConsumerMiddlewareOptions.js';
 export * from './InMemoryIdempotencyStore.js';

@@ -121,6 +121,20 @@ test('runs configurable controller, swagger and static hooks', async () => {
     afterControllersHooks: [(app) => calls.push(['after', Boolean(app)])],
     beforeControllersHooks: [(app) => calls.push(['before', Boolean(app)])],
     controllers: [ExternalController],
+    hooks: [
+      {
+        handle: (app) => calls.push(['phase:before', Boolean(app)]),
+        phase: 'beforeControllers',
+      },
+      {
+        handle: (app) => calls.push(['phase:after', Boolean(app)]),
+        phase: 'afterControllers',
+      },
+      {
+        handle: (app) => calls.push(['phase:errors', Boolean(app)]),
+        phase: 'beforeErrors',
+      },
+    ],
     kernel: { getRoutes: () => [] },
     middlewares: [middleware('base')],
     port: 0,
@@ -135,8 +149,23 @@ test('runs configurable controller, swagger and static hooks', async () => {
 
   assert.deepEqual(calls, [
     ['before', true],
+    ['phase:before', true],
     ['after', true],
+    ['phase:after', true],
     ['swagger', true],
     ['static', true],
+    ['phase:errors', true],
   ]);
+});
+
+test('rejects duplicate run calls while server is running', async () => {
+  const server = new ExpressKernelServer({
+    kernel: { getRoutes: () => [] },
+    port: 0,
+  });
+
+  await server.run();
+
+  await assert.rejects(() => server.run(), /HTTP server is already running/);
+  await server.close();
 });

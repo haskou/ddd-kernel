@@ -3,6 +3,7 @@ import type {
   HandlerContext,
   MessageHandler,
   PublisherHook,
+  PublisherHookErrorPolicy,
 } from '../../../contracts/index.js';
 
 import { PublisherHookPipeline } from '../PublisherHookPipeline.js';
@@ -18,8 +19,12 @@ export class InMemoryEventBus {
   constructor(
     private readonly context: HandlerContext,
     publisherHooks: readonly PublisherHook[] = [],
+    publisherHookErrorPolicy?: PublisherHookErrorPolicy,
   ) {
-    this.publisherHookPipeline = new PublisherHookPipeline(publisherHooks);
+    this.publisherHookPipeline = new PublisherHookPipeline(
+      publisherHooks,
+      publisherHookErrorPolicy,
+    );
   }
 
   public subscribe<TEvent extends DomainEvent>(

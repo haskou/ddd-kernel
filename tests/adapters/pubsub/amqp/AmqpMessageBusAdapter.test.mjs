@@ -146,8 +146,10 @@ test('publishes domain events and closes channel resources', async () => {
     serviceName: 'service',
   });
   adapter.registerPublisherHooks({
-    afterPublish: (context) => hookCalls.push(['after', context.topic]),
-    beforePublish: (context) => hookCalls.push(['before', context.topic]),
+    afterPublish: (context) =>
+      hookCalls.push(['after', context.topic, context.domainEvent]),
+    beforePublish: (context) =>
+      hookCalls.push(['before', context.topic, context.domainEvent]),
   });
   const event = new TestDomainEvent(
     'aggregate-id',
@@ -172,8 +174,8 @@ test('publishes domain events and closes channel resources', async () => {
     true,
   );
   assert.deepEqual(hookCalls, [
-    ['before', 'test.domain-event'],
-    ['after', 'test.domain-event'],
+    ['before', 'test.domain-event', event],
+    ['after', 'test.domain-event', event],
   ]);
 });
 
@@ -186,7 +188,10 @@ test('consumes AMQP messages and acknowledges handled events', async () => {
     dsn: 'amqp://localhost',
     exchange: 'domain',
   });
-  const message = createConsumeMessage(createMessage());
+  const message = createConsumeMessage(createMessage(), {
+    retries: 2,
+    traceId: 'trace-id',
+  });
 
   await withAmqpConnect(channel, async () => {
     await adapter.consume(
@@ -194,14 +199,20 @@ test('consumes AMQP messages and acknowledges handled events', async () => {
       'test.domain-event',
       TestDomainEvent,
       'domain',
-      async (event) => handled.push(event),
+      async (event, context) => handled.push([event, context]),
     );
 
     await channel.consumers[0](null);
     await channel.consumers[0](message);
   });
 
-  assert.equal(handled[0] instanceof TestDomainEvent, true);
+  assert.equal(handled[0][0] instanceof TestDomainEvent, true);
+  assert.deepEqual(handled[0][1].metadata.headers, {
+    retries: 2,
+    traceId: 'trace-id',
+  });
+  assert.equal(handled[0][1].metadata.rawMessage, message);
+  assert.equal(handled[0][1].metadata.retries, 2);
   assert.deepEqual(channel.calls.at(-1), ['ack', message]);
 });
 

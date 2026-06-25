@@ -41,6 +41,17 @@ export class ExpressKernelServer {
     }
   }
 
+  private async runPhaseHooks(
+    phase: 'afterControllers' | 'beforeControllers' | 'beforeErrors',
+    app: HttpApp,
+  ): Promise<void> {
+    for (const hook of this.options.hooks ?? []) {
+      if (hook.phase === phase) {
+        await hook.handle(app);
+      }
+    }
+  }
+
   private registerMiddlewares(
     app: HttpApp,
     middlewares: readonly RequestHandler[] | undefined,
@@ -87,6 +98,10 @@ export class ExpressKernelServer {
   }
 
   public async run(): Promise<void> {
+    if (this.serverInstance) {
+      throw new Error('HTTP server is already running.');
+    }
+
     const controllers = [
       ...this.options.kernel.getRoutes(),
       ...(this.options.controllers ?? []),
@@ -96,14 +111,17 @@ export class ExpressKernelServer {
     this.registerMiddlewares(app, this.options.middlewares);
     this.registerMiddlewares(app, this.options.preControllerMiddlewares);
     await this.runHooks(this.options.beforeControllersHooks, app);
+    await this.runPhaseHooks('beforeControllers', app);
     useExpressServer(app, {
       controllers,
       routePrefix: this.options.routePrefix,
     });
     this.registerMiddlewares(app, this.options.postControllerMiddlewares);
     await this.runHooks(this.options.afterControllersHooks, app);
+    await this.runPhaseHooks('afterControllers', app);
     await this.runHooks(this.options.swaggerHooks, app);
     await this.runHooks(this.options.staticHooks, app);
+    await this.runPhaseHooks('beforeErrors', app);
 
     this.registerErrorHandlers(app);
     this.appInstance = app;

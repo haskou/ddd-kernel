@@ -13,6 +13,7 @@ import type {
   Constructor,
   DomainEvent,
   DomainEventConsumer,
+  DomainMessageBus,
   DomainEventPublisher,
 } from '../../../domain/index.js';
 import type { AmqpMessage } from './AmqpMessage.js';
@@ -25,7 +26,7 @@ import { InvalidDomainEventError } from './InvalidDomainEventError.js';
 import { NoFailedMessagesError } from './NoFailedMessagesError.js';
 
 export default class AmqpMessageBusAdapter
-  implements DomainEventConsumer, DomainEventPublisher
+  implements DomainEventConsumer, DomainEventPublisher, DomainMessageBus
 {
   private channelInstance: Channel | undefined;
   private connection: ChannelModel | undefined;
@@ -38,6 +39,7 @@ export default class AmqpMessageBusAdapter
       options.exchange ?? options.serviceName ?? process.env.SERVICE_NAME ?? '';
     this.publisherHookPipeline = new PublisherHookPipeline(
       options.publisherHooks,
+      options.publisherHookErrorPolicy,
     );
   }
 
@@ -103,7 +105,13 @@ export default class AmqpMessageBusAdapter
         message,
       );
 
-      await context.handler(domainEvent);
+      await context.handler(domainEvent, {
+        metadata: {
+          headers: msg.properties.headers ?? {},
+          rawMessage: msg,
+          retries: Number(msg.properties.headers?.retries ?? 0),
+        },
+      });
     } catch (error) {
       await this.handleError(msg, message, context, error);
     }
@@ -458,6 +466,7 @@ export default class AmqpMessageBusAdapter
     for (const event of domainEvents) {
       await this.publisherHookPipeline.run(
         {
+          domainEvent: event,
           message: {
             metadata: {
               causationId: event.getCausationId(),

@@ -1,5 +1,8 @@
 import type { DomainEventConsumer } from '../../domain/DomainEventConsumer.js';
-import type { DomainEvent } from '../../domain/index.js';
+import type {
+  DomainEvent,
+  DomainEventConsumerContext,
+} from '../../domain/index.js';
 
 import { Kernel } from '../../Kernel.js';
 import { ConsumerMiddlewarePipeline } from './ConsumerMiddlewarePipeline.js';
@@ -7,8 +10,12 @@ import { ConsumerMiddlewarePipeline } from './ConsumerMiddlewarePipeline.js';
 export abstract class Consumer {
   constructor(private readonly consumer: DomainEventConsumer) {}
 
-  private async runMiddleware(event: DomainEvent): Promise<void> {
+  private async runMiddleware(
+    event: DomainEvent,
+    consumerContext?: DomainEventConsumerContext,
+  ): Promise<void> {
     const pipeline = new ConsumerMiddlewarePipeline(Kernel.consumerMiddleware);
+    const metadata = consumerContext?.metadata ?? {};
 
     await pipeline.execute(
       event,
@@ -19,8 +26,9 @@ export abstract class Consumer {
         eventName: this.eventName,
         exchange: this.exchange,
         kernel: Kernel.active,
-        metadata: {},
+        metadata,
         queueName: this.queueName,
+        rawMessage: metadata.rawMessage,
       },
       () => this.handler(event),
     );
@@ -42,7 +50,7 @@ export abstract class Consumer {
       this.eventName,
       this.domainEvent,
       this.exchange,
-      (event) => this.runMiddleware(event),
+      (event, context) => this.runMiddleware(event, context),
     );
   }
 

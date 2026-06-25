@@ -79,3 +79,50 @@ test('runs publisher error hooks before rethrowing', async () => {
   );
   assert.deepEqual(calls, [[error, 'topic']]);
 });
+
+test('does not fail publish when afterPublish hooks fail by default', async () => {
+  const context = { di: {}, publish: async () => {} };
+  const calls = [];
+  const pubSub = new InMemoryPubSub(context, [
+    {
+      afterPublish: () => {
+        throw new Error('websocket failed');
+      },
+    },
+  ]);
+
+  await pubSub.subscribe('topic', async (receivedMessage) => {
+    calls.push(['consumer', receivedMessage.name]);
+  });
+
+  await pubSub.publish('topic', { name: 'message' });
+
+  assert.deepEqual(calls, [['consumer', 'message']]);
+});
+
+test('can fail publish when afterPublish policy asks for it', async () => {
+  const context = { di: {}, publish: async () => {} };
+  const afterPublishError = new Error('replica failed');
+  const policyCalls = [];
+  const pubSub = new InMemoryPubSub(
+    context,
+    [
+      {
+        afterPublish: () => {
+          throw afterPublishError;
+        },
+      },
+    ],
+    {
+      handleAfterPublishError: (error, publishContext) =>
+        policyCalls.push([error, publishContext.topic]),
+      shouldFailAfterPublish: () => true,
+    },
+  );
+
+  await assert.rejects(
+    () => pubSub.publish('topic', { name: 'message' }),
+    afterPublishError,
+  );
+  assert.deepEqual(policyCalls, [[afterPublishError, 'topic']]);
+});

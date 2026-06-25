@@ -41,11 +41,17 @@ class TestConsumer extends Consumer {
 test('initializes the domain event consumer with metadata and middleware chain', async () => {
   const calls = [];
   const event = new TestDomainEvent('aggregate-id');
+  const rawMessage = { id: 'raw-message' };
   const kernel = new Kernel();
   const domainEventConsumer = {
     consume: async (queueName, eventName, EventClass, exchange, handler) => {
       calls.push([queueName, eventName, EventClass, exchange]);
-      await handler(event);
+      await handler(event, {
+        metadata: {
+          rawMessage,
+          retries: 1,
+        },
+      });
     },
   };
   const consumer = new TestConsumer(domainEventConsumer, calls);
@@ -54,7 +60,13 @@ test('initializes the domain event consumer with metadata and middleware chain',
   kernel.registerConsumerMiddleware({
     async handle(receivedEvent, next, context) {
       calls.push(['middleware:before', receivedEvent]);
-      calls.push(['context', context.eventId, context.queueName]);
+      calls.push([
+        'context',
+        context.eventId,
+        context.queueName,
+        context.metadata.retries,
+        context.rawMessage,
+      ]);
       await next();
       calls.push(['middleware:after', receivedEvent]);
     },
@@ -65,7 +77,7 @@ test('initializes the domain event consumer with metadata and middleware chain',
   assert.deepEqual(calls, [
     ['test-queue', 'test.domain-event', TestDomainEvent, 'test-exchange'],
     ['middleware:before', event],
-    ['context', event.eventId, 'test-queue'],
+    ['context', event.eventId, 'test-queue', 1, rawMessage],
     ['handler', event],
     ['middleware:after', event],
   ]);
@@ -194,4 +206,33 @@ test('supports middleware defaults and retry predicates', async () => {
   assert.equal(event.getCausationId(), 'context-causation-id');
   assert.equal(await store.has('custom-key'), true);
   assert.deepEqual(calls, [['correlation'], ['idempotency']]);
+});
+
+test('releases claimed idempotency keys when handlers fail', async () => {
+  const event = new TestDomainEvent('aggregate-id');
+  const context = {
+    eventId: 'event-id',
+    eventName: 'test.domain-event',
+    exchange: 'exchange',
+    kernel: new Kernel(),
+    metadata: {},
+    queueName: 'queue',
+  };
+  const store = new InMemoryIdempotencyStore();
+  const middleware = new IdempotencyConsumerMiddleware({ store });
+
+  await assert.rejects(
+    () =>
+      middleware.handle(
+        event,
+        async () => {
+          throw new Error('failed');
+        },
+        context,
+      ),
+    /failed/,
+  );
+  await middleware.handle(event, async () => {}, context);
+
+  assert.equal(await store.has('event-id'), true);
 });

@@ -3,6 +3,7 @@ import type {
   Message,
   MessageHandler,
   PublisherHook,
+  PublisherHookErrorPolicy,
   Subscription,
 } from '../../../contracts/index.js';
 
@@ -19,8 +20,12 @@ export class InMemoryPubSub {
   constructor(
     private readonly context: HandlerContext,
     publisherHooks: readonly PublisherHook[] = [],
+    publisherHookErrorPolicy?: PublisherHookErrorPolicy,
   ) {
-    this.publisherHookPipeline = new PublisherHookPipeline(publisherHooks);
+    this.publisherHookPipeline = new PublisherHookPipeline(
+      publisherHooks,
+      publisherHookErrorPolicy,
+    );
   }
 
   public async publish<TMessage extends Message>(

@@ -36,11 +36,14 @@ that need direct app access, such as Swagger or static assets:
 ```ts
 const server = new ExpressKernelServer({
   kernel,
+  hooks: [
+    { phase: 'beforeControllers', handle: setupTracing },
+    { phase: 'beforeErrors', handle: setupSwagger },
+    { phase: 'beforeErrors', handle: setupStaticAssets },
+  ],
   middlewares: [requestIdMiddleware],
   preControllerMiddlewares: [authenticationMiddleware],
   postControllerMiddlewares: [notFoundMiddleware],
-  swaggerHooks: [(app) => setupSwagger(app)],
-  staticHooks: [(app) => app.use('/public', express.static('public'))],
 });
 ```
 
@@ -49,9 +52,15 @@ Hook order is:
 1. `middlewares`
 2. `preControllerMiddlewares`
 3. `beforeControllersHooks`
-4. `routing-controllers`
-5. `postControllerMiddlewares`
-6. `afterControllersHooks`
-7. `swaggerHooks`
-8. `staticHooks`
-9. `errorHandlers`
+4. `hooks` with `phase: 'beforeControllers'`
+5. `routing-controllers`
+6. `postControllerMiddlewares`
+7. `afterControllersHooks`
+8. `hooks` with `phase: 'afterControllers'`
+9. `swaggerHooks`
+10. `staticHooks`
+11. `hooks` with `phase: 'beforeErrors'`
+12. `errorHandlers`
+
+`swaggerHooks` and `staticHooks` remain available for compatibility. New
+integrations should use `hooks` with an explicit phase.

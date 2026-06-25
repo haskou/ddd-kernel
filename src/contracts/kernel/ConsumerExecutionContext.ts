@@ -8,5 +8,6 @@ export interface ConsumerExecutionContext {
   readonly exchange: string;
   readonly kernel: Kernel;
   readonly metadata: Readonly<Record<string, unknown>>;
+  readonly rawMessage?: unknown;
   readonly queueName: string;
 }
