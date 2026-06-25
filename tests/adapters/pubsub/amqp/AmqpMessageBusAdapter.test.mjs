@@ -288,6 +288,7 @@ test('consumes DLX messages with success, nack and no-message paths', async () =
     channel.getMessages = [false, successMessage, failingMessage];
 
     await adapter.consumeDlx('queue', TestDomainEvent, async () => {}, 3);
+    channel.eventHandlers.get('error')();
 
     channel.messageCount = 0;
 
