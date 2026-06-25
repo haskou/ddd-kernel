@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { Kernel } from '@haskou/ddd-kernel';
 import {
   CorrelationConsumerMiddleware,
