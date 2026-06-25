@@ -514,6 +514,34 @@ test('logs unhandled HTTP errors in configured environments', async () => {
   }
 });
 
+test('does not forward unhandled HTTP errors after sending fallback response', () => {
+  const calls = [];
+  const response = {
+    json: (body) => {
+      calls.push(['json', body]);
+
+      return response;
+    },
+    status: (statusCode) => {
+      calls.push(['status', statusCode]);
+
+      return response;
+    },
+  };
+
+  new HttpErrorHandler().handle(
+    new Error('unexpected'),
+    {},
+    response,
+    (error) => calls.push(['next', error]),
+  );
+
+  assert.deepEqual(calls, [
+    ['status', 500],
+    ['json', { code: 'Error', message: 'unexpected' }],
+  ]);
+});
+
 test('runs custom HTTP error handlers before generic HTTP errors', async () => {
   const server = new ExpressKernelServer({
     hooks: [

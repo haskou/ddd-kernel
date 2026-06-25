@@ -332,13 +332,17 @@ test('sends exhausted messages to DLX and logs publish failures', async () => {
 
 test('consumes DLX messages with success, nack and no-message paths', async () => {
   const channel = new FakeChannel();
+  const handled = [];
   const { default: AmqpMessageBusAdapter, NoFailedMessagesError } =
     await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     dsn: 'amqp://localhost?frameMax=0',
     exchange: 'domain',
   });
-  const successMessage = createConsumeMessage(createMessage());
+  const successMessage = createConsumeMessage(createMessage(), {
+    retries: 3,
+    traceId: 'dlx-trace-id',
+  });
   const failingMessage = {
     content: Buffer.from('{'),
     properties: { headers: {} },
@@ -348,7 +352,12 @@ test('consumes DLX messages with success, nack and no-message paths', async () =
     channel.messageCount = 3;
     channel.getMessages = [false, successMessage, failingMessage];
 
-    await adapter.consumeDlx('queue', TestDomainEvent, async () => {}, 3);
+    await adapter.consumeDlx(
+      'queue',
+      TestDomainEvent,
+      async (event, context) => handled.push([event, context]),
+      3,
+    );
     channel.eventHandlers.get('error')();
 
     channel.messageCount = 0;
@@ -363,6 +372,13 @@ test('consumes DLX messages with success, nack and no-message paths', async () =
     channel.calls.some(([name]) => name === 'ack'),
     true,
   );
+  assert.equal(handled[0][0] instanceof TestDomainEvent, true);
+  assert.deepEqual(handled[0][1].metadata.headers, {
+    retries: 3,
+    traceId: 'dlx-trace-id',
+  });
+  assert.equal(handled[0][1].metadata.rawMessage, successMessage);
+  assert.equal(handled[0][1].metadata.retries, 3);
   assert.equal(
     channel.calls.some(([name]) => name === 'nack'),
     true,

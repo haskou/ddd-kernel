@@ -118,11 +118,7 @@ export class HttpErrorHandler implements ExpressErrorMiddlewareInterface {
     return true;
   }
 
-  private handleUnhandledError(
-    error: Error,
-    response: Response,
-    next: NextFunction,
-  ): void {
+  private handleUnhandledError(error: Error, response: Response): void {
     if (this.exposeUnhandledErrorsIn.includes(process.env.NODE_ENV ?? '')) {
       this.logUnhandledError(error);
     }
@@ -133,8 +129,6 @@ export class HttpErrorHandler implements ExpressErrorMiddlewareInterface {
         String(HttpRouteStatusEnum.INTERNAL_SERVER_ERROR),
       message: error.message || 'Unknown error',
     });
-
-    next(error);
   }
 
   public error(
@@ -156,7 +150,9 @@ export class HttpErrorHandler implements ExpressErrorMiddlewareInterface {
       return;
     }
 
-    this.handleUnhandledError(error, response, next);
+    void next;
+
+    this.handleUnhandledError(error, response);
   }
 
   public handle = (
