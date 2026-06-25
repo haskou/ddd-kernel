@@ -144,6 +144,27 @@ Error handlers run after:
 If no error handler is registered, `ExpressKernelServer` uses a default handler
 that returns a `500` JSON response.
 
+The Express adapter also exports `HttpErrorHandler`, a reusable handler for the
+common cases covered by `routing-controllers` and Express:
+
+```ts
+import {
+  ExpressKernelServer,
+  HttpErrorHandler,
+} from '@haskou/ddd-kernel/adapters/ui/express';
+
+const server = new ExpressKernelServer({ kernel });
+
+server.registerErrorHandlers(
+  new HttpErrorHandler({ logger: kernel.logger }).handle,
+);
+```
+
+It maps malformed JSON to `400`, payload-too-large errors to `413`, HTTP errors
+with `httpCode`, `statusCode` or `status` to their status code, and unexpected
+errors to `500`. Validation errors exposed through an `errors` array are
+flattened into the response body.
+
 ## Registration API
 
 `ExpressKernelServer` exposes these registration methods:

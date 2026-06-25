@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { ExpressKernelServer } from '../../../../dist/adapters/ui/express/index.js';
+import {
+  ExpressKernelServer,
+  HttpErrorHandler,
+} from '../../../../dist/adapters/ui/express/index.js';
 import { Kernel } from '../../../../dist/index.js';
 
 const getServerPort = (server) => {
@@ -289,6 +292,154 @@ test('uses the default HTTP error handler when none is registered', async () => 
     assert.deepEqual(body, { error: 'plain failure' });
   } finally {
     await server.close();
+  }
+});
+
+test('handles common HTTP errors with the shared HTTP error handler', async () => {
+  const server = new ExpressKernelServer({
+    hooks: [
+      {
+        handle: (app) => {
+          app.get('/syntax', (request, response, next) => {
+            void request;
+            void response;
+            next(new SyntaxError('broken'));
+          });
+          app.get('/payload', (request, response, next) => {
+            void request;
+            void response;
+            const error = new Error('too large');
+            error.type = 'entity.too.large';
+            next(error);
+          });
+          app.get('/http', (request, response, next) => {
+            void request;
+            void response;
+            const error = new Error('invalid');
+            error.name = 'BadRequestError';
+            error.httpCode = 400;
+            error.errors = [
+              {
+                children: [
+                  {
+                    constraints: { isString: 'name must be a string' },
+                    property: 'name',
+                    value: 123,
+                  },
+                ],
+                property: 'body',
+              },
+            ];
+            next(error);
+          });
+        },
+        phase: 'beforeControllers',
+      },
+    ],
+    kernel: new Kernel(),
+    port: 0,
+  });
+
+  server.registerErrorHandlers(new HttpErrorHandler().handle);
+
+  await server.run();
+
+  try {
+    const syntaxResponse = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/syntax`,
+    );
+    const payloadResponse = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/payload`,
+    );
+    const httpResponse = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/http`,
+    );
+
+    assert.equal(syntaxResponse.status, 400);
+    assert.deepEqual(await syntaxResponse.json(), {
+      code: 'SyntaxError',
+      message: 'Malformed JSON',
+    });
+    assert.equal(payloadResponse.status, 413);
+    assert.deepEqual(await payloadResponse.json(), {
+      code: 'PayloadTooLargeError',
+      httpStatus: 413,
+      message: 'Request entity too large.',
+    });
+    assert.equal(httpResponse.status, 400);
+    assert.deepEqual(await httpResponse.json(), {
+      code: 'BadRequestError',
+      errors: [
+        {
+          details: { isString: 'name must be a string' },
+          property: 'name',
+          value: 123,
+        },
+      ],
+      httpStatus: 400,
+      message: 'invalid',
+    });
+  } finally {
+    await server.close();
+  }
+});
+
+test('logs unhandled HTTP errors in configured environments', async () => {
+  const calls = [];
+  const previousEnvironment = process.env.NODE_ENV;
+  const server = new ExpressKernelServer({
+    hooks: [
+      {
+        handle: (app) => {
+          app.get('/unhandled', (request, response, next) => {
+            void request;
+            void response;
+            next(new Error('unexpected'));
+          });
+        },
+        phase: 'beforeControllers',
+      },
+    ],
+    kernel: new Kernel(),
+    port: 0,
+  });
+
+  process.env.NODE_ENV = 'test';
+  server.registerErrorHandlers(
+    new HttpErrorHandler({
+      logger: {
+        debug: (message) => calls.push(['debug', message]),
+        error: (message) => calls.push(['error', message]),
+        info: () => {},
+        warn: () => {},
+      },
+    }).handle,
+  );
+
+  await server.run();
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/unhandled`,
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 500);
+    assert.deepEqual(body, {
+      code: 'Error',
+      message: 'unexpected',
+    });
+    assert.equal(calls[0][0], 'error');
+    assert.equal(calls[0][1], 'Unhandled error: unexpected');
+    assert.equal(calls[1][0], 'debug');
+  } finally {
+    await server.close();
+
+    if (previousEnvironment === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = previousEnvironment;
+    }
   }
 });
 

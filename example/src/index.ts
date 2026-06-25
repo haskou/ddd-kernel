@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import type { HttpApp } from '@haskou/ddd-kernel/adapters/ui/express';
-import type { ErrorRequestHandler, RequestHandler } from 'express';
+import type { RequestHandler } from 'express';
 
 import { Kernel } from '@haskou/ddd-kernel';
 import {
@@ -9,7 +9,10 @@ import {
   InMemoryIdempotencyStore,
   RetryConsumerMiddleware,
 } from '@haskou/ddd-kernel/adapters/pubsub';
-import { ExpressKernelServer } from '@haskou/ddd-kernel/adapters/ui/express';
+import {
+  ExpressKernelServer,
+  HttpErrorHandler,
+} from '@haskou/ddd-kernel/adapters/ui/express';
 import path from 'node:path';
 
 import GetUserByIdRoute from './apps/api/routes/GetUserByIdRoute.js';
@@ -55,27 +58,6 @@ const requestLoggerMiddleware: RequestHandler = (request, response, next) => {
   next();
 };
 
-const httpErrorHandler: ErrorRequestHandler = (
-  error,
-  request,
-  response,
-  next,
-) => {
-  void request;
-
-  if (response.headersSent) {
-    next(error);
-
-    return;
-  }
-
-  kernel.logger.error(error instanceof Error ? error.message : String(error));
-  response.status(500).json({
-    error: 'InternalServerError',
-    message: error instanceof Error ? error.message : 'Unexpected error',
-  });
-};
-
 const server = new ExpressKernelServer({
   kernel,
   port: Number(process.env.PORT ?? 3000),
@@ -94,7 +76,9 @@ server
     },
     phase: 'beforeErrors',
   })
-  .registerErrorHandlers(httpErrorHandler);
+  .registerErrorHandlers(
+    new HttpErrorHandler({ logger: kernel.logger }).handle,
+  );
 
 // Shutdown hooks give the kernel one standard way to release runtime resources.
 kernel.registerShutdownHook(() => server.close());
