@@ -11,12 +11,14 @@ import type { ServiceResolver } from '../../contracts/index.js';
 import type { ContainerInternals } from './ContainerInternals.js';
 import type { DefinitionMetadata } from './DefinitionMetadata.js';
 import type { DependencyInjectionOptions } from './DependencyInjectionOptions.js';
+import type { DependencyOverride } from './DependencyOverride.js';
 
 export class DependencyInjection implements ServiceResolver {
   private static configuredInstance: DependencyInjection | undefined;
   private autowire: Autowire | undefined;
   private loader: YamlFileLoader | undefined;
   private readonly container: ContainerBuilder;
+  private readonly overrideTokenIds = new Map<unknown, string>();
 
   public static configure(
     options: DependencyInjectionOptions,
@@ -67,6 +69,20 @@ export class DependencyInjection implements ServiceResolver {
 
   private getServiceClassName(serviceName: unknown): string | undefined {
     return typeof serviceName === 'function' ? serviceName.name : undefined;
+  }
+
+  private getOverrideId(prefix: string, token: unknown): string {
+    const tokenName = this.getServiceClassName(token) ?? String(token);
+
+    return `ddd-kernel.override.${prefix}.${tokenName}`;
+  }
+
+  private ensureSyntheticService(id: string, value: unknown): void {
+    const definition = this.container.register(id);
+
+    definition.public = true;
+    definition.synthetic = true;
+    this.container.set(id, value);
   }
 
   private parentMatchesService(
@@ -136,6 +152,88 @@ export class DependencyInjection implements ServiceResolver {
     return matches[matches.length - 1];
   }
 
+  private getOverrideTokenId(token: unknown): string {
+    const registeredServiceId = this.findRegisteredServiceId(token);
+
+    if (registeredServiceId) {
+      return registeredServiceId;
+    }
+
+    const aliasServiceId = this.findAliasServiceId(token);
+
+    if (aliasServiceId) {
+      return aliasServiceId;
+    }
+
+    const overrideTokenId = this.getOverrideId('token', token);
+
+    this.ensureSyntheticService(overrideTokenId, undefined);
+
+    return overrideTokenId;
+  }
+
+  private getOverrideClassServiceId(
+    ClassDefinition: new () => unknown,
+  ): string {
+    const registeredServiceId = this.findRegisteredServiceId(ClassDefinition);
+
+    if (registeredServiceId) {
+      return registeredServiceId;
+    }
+
+    const overrideClassId = this.getOverrideId('class', ClassDefinition);
+
+    this.container.register(overrideClassId, ClassDefinition);
+
+    return overrideClassId;
+  }
+
+  private applyClassOverride(override: DependencyOverride): void {
+    if (!('useClass' in override)) {
+      return;
+    }
+
+    const tokenId = this.getOverrideTokenId(override.token);
+    const classId = this.getOverrideClassServiceId(override.useClass);
+
+    this.overrideTokenIds.set(override.token, tokenId);
+    this.container.setAlias(tokenId, classId);
+  }
+
+  private applyFactoryOverride(override: DependencyOverride): void {
+    if (!('useFactory' in override)) {
+      return;
+    }
+
+    const tokenId = this.getOverrideTokenId(override.token);
+    const factoryId = this.getOverrideId('factory', override.token);
+
+    this.ensureSyntheticService(factoryId, override.useFactory(this));
+    this.overrideTokenIds.set(override.token, tokenId);
+    this.container.setAlias(tokenId, factoryId);
+  }
+
+  private applyValueOverride(override: DependencyOverride): void {
+    if (!('useValue' in override)) {
+      return;
+    }
+
+    const tokenId = this.getOverrideTokenId(override.token);
+    const valueId = this.getOverrideId('value', override.token);
+
+    this.ensureSyntheticService(valueId, override.useValue);
+    this.overrideTokenIds.set(override.token, tokenId);
+    this.container.setAlias(tokenId, valueId);
+  }
+
+  private applyOverrides(): void {
+    for (const override of this.options.overrides ?? []) {
+      this.applyClassOverride(override);
+      this.applyFactoryOverride(override);
+      this.applyValueOverride(override);
+    }
+  }
+
   private registerParentAliases(): void {
     for (const [id, definition] of this.definitions.entries()) {
       if (definition._abstract === true || !definition._parent) {
@@ -161,20 +259,27 @@ export class DependencyInjection implements ServiceResolver {
     }
 
     this.registerParentAliases();
+    this.applyOverrides();
     await this.container.compile();
   }
 
   public getService<T>(serviceName: unknown): T {
-    const childServiceId = this.findConcreteChildServiceId(serviceName);
+    const overrideTokenId = this.overrideTokenIds.get(serviceName);
 
-    if (childServiceId) {
-      return this.container.get<T>(childServiceId);
+    if (overrideTokenId) {
+      return this.container.get<T>(overrideTokenId);
     }
 
     const aliasServiceId = this.findAliasServiceId(serviceName);
 
     if (aliasServiceId) {
       return this.container.get<T>(aliasServiceId);
+    }
+
+    const childServiceId = this.findConcreteChildServiceId(serviceName);
+
+    if (childServiceId) {
+      return this.container.get<T>(childServiceId);
     }
 
     const registeredServiceId = this.findRegisteredServiceId(serviceName);

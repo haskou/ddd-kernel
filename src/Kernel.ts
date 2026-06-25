@@ -177,6 +177,7 @@ export class Kernel {
     return {
       containerBuild:
         options.containerBuild ?? process.env.CONTAINER_BUILD === 'true',
+      overrides: options.overrides ?? [],
       servicesYamlPath:
         options.servicesYamlPath ??
         this.options.servicesYamlPath ??
