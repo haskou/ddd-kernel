@@ -1,3 +1,9 @@
-import type { DomainEvent } from '../../../domain/index.js';
+import type {
+  DomainEvent,
+  DomainEventConsumerContext,
+} from '../../../domain/index.js';
 
-export type DomainEventHandler = (event: DomainEvent) => Promise<void>;
+export type DomainEventHandler = (
+  event: DomainEvent,
+  context?: DomainEventConsumerContext,
+) => Promise<void>;

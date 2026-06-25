@@ -5,11 +5,17 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 
+import { Reference } from 'node-dependency-injection';
+
 import { DependencyInjection } from '../dist/infrastructure/dependency-injection/index.js';
 
 class ContractRepository {}
 
 class ConcreteRepository extends ContractRepository {}
+
+class InMemoryRepository extends ContractRepository {}
+
+class MongoRepository extends ContractRepository {}
 
 class AliasRepository {}
 
@@ -65,6 +71,231 @@ test('resolves an alias to its target implementation', async () => {
   const repository = dependencyInjection.getService(AliasRepository);
 
   assert.ok(repository instanceof ConcreteRepository);
+});
+
+test('overrides an abstract parent with another registered implementation', async () => {
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: ContractRepository,
+        useClass: InMemoryRepository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+  const parentId = serviceIdFor(ContractRepository);
+  const mongoId = serviceIdFor(MongoRepository);
+  const inMemoryId = serviceIdFor(InMemoryRepository);
+
+  dependencyInjection.container.register(
+    parentId,
+    ContractRepository,
+  ).abstract = true;
+  dependencyInjection.container.register(mongoId, MongoRepository).parent =
+    parentId;
+  dependencyInjection.container.register(
+    inMemoryId,
+    InMemoryRepository,
+  ).parent = parentId;
+  dependencyInjection.registerParentAliases();
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  const repository = dependencyInjection.getService(ContractRepository);
+
+  assert.ok(repository instanceof InMemoryRepository);
+});
+
+test('overrides a service with a value instance', async () => {
+  const repository = new InMemoryRepository();
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: ContractRepository,
+        useValue: repository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+  const parentId = serviceIdFor(ContractRepository);
+  const mongoId = serviceIdFor(MongoRepository);
+
+  dependencyInjection.container.register(
+    parentId,
+    ContractRepository,
+  ).abstract = true;
+  dependencyInjection.container.register(mongoId, MongoRepository).parent =
+    parentId;
+  dependencyInjection.registerParentAliases();
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.equal(dependencyInjection.getService(ContractRepository), repository);
+});
+
+test('overrides a service with a factory result', async () => {
+  const repository = new InMemoryRepository();
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: ContractRepository,
+        useFactory: () => repository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+  const parentId = serviceIdFor(ContractRepository);
+  const mongoId = serviceIdFor(MongoRepository);
+
+  dependencyInjection.container.register(
+    parentId,
+    ContractRepository,
+  ).abstract = true;
+  dependencyInjection.container.register(mongoId, MongoRepository).parent =
+    parentId;
+  dependencyInjection.registerParentAliases();
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.equal(dependencyInjection.getService(ContractRepository), repository);
+});
+
+test('overrides an alias token with a value instance', async () => {
+  const repository = new InMemoryRepository();
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: AliasRepository,
+        useValue: repository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+  const aliasId = serviceIdFor(AliasRepository);
+  const mongoId = serviceIdFor(MongoRepository);
+
+  dependencyInjection.container.register(mongoId, MongoRepository);
+  dependencyInjection.container.setAlias(aliasId, mongoId);
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.equal(dependencyInjection.getService(AliasRepository), repository);
+});
+
+test('overrides a token that is not registered in the container', async () => {
+  class ExternalRepository {}
+
+  const repository = new ExternalRepository();
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: ExternalRepository,
+        useValue: repository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.equal(dependencyInjection.getService(ExternalRepository), repository);
+});
+
+test('overrides a literal token that is not registered in the container', async () => {
+  const repository = new InMemoryRepository();
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: 'repository',
+        useValue: repository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.equal(dependencyInjection.getService('repository'), repository);
+});
+
+test('registers override classes that are not already in the container', async () => {
+  class ExternalRepository extends ContractRepository {}
+
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: ContractRepository,
+        useClass: ExternalRepository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+  const parentId = serviceIdFor(ContractRepository);
+  const mongoId = serviceIdFor(MongoRepository);
+
+  dependencyInjection.container.register(
+    parentId,
+    ContractRepository,
+  ).abstract = true;
+  dependencyInjection.container.register(mongoId, MongoRepository).parent =
+    parentId;
+  dependencyInjection.registerParentAliases();
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.ok(
+    dependencyInjection.getService(ContractRepository) instanceof
+      ExternalRepository,
+  );
+});
+
+test('overrides unresolved argument references generated for external package imports', async () => {
+  class ExternalRepository {}
+
+  class ServiceThatNeedsExternalRepository {}
+
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: ExternalRepository,
+        useClass: InMemoryRepository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+  const serviceId = serviceIdFor(ServiceThatNeedsExternalRepository);
+  const externalReferenceId = Buffer.from(
+    'src__application____vendor__package__ExternalRepository',
+  ).toString('base64');
+
+  dependencyInjection.container
+    .register(serviceId, ServiceThatNeedsExternalRepository)
+    .addArgument(new Reference(externalReferenceId));
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.ok(
+    dependencyInjection.getService(externalReferenceId) instanceof
+      InMemoryRepository,
+  );
 });
 
 test('generates services.yaml', async () => {
@@ -192,12 +423,18 @@ test('falls back to literal container ids when service name is not a class', asy
   const literalServiceId = serviceIdFor(LiteralService);
 
   dependencyInjection.container.register('literal-service', LiteralService);
-  dependencyInjection.container.register(parentServiceId, ParentService)
-    .abstract = true;
-  dependencyInjection.container.register(literalServiceId, LiteralService)
-    .parent = parentServiceId;
-  dependencyInjection.container.register('abstract-service', LiteralService)
-    .abstract = true;
+  dependencyInjection.container.register(
+    parentServiceId,
+    ParentService,
+  ).abstract = true;
+  dependencyInjection.container.register(
+    literalServiceId,
+    LiteralService,
+  ).parent = parentServiceId;
+  dependencyInjection.container.register(
+    'abstract-service',
+    LiteralService,
+  ).abstract = true;
   dependencyInjection.container.register('parentless-service', LiteralService);
   dependencyInjection.registerParentAliases();
   await dependencyInjection.container.compile();
@@ -205,5 +442,27 @@ test('falls back to literal container ids when service name is not a class', asy
   assert.ok(
     dependencyInjection.getService('literal-service') instanceof LiteralService,
   );
-  assert.ok(dependencyInjection.getService(ParentService) instanceof LiteralService);
+  assert.ok(
+    dependencyInjection.getService(ParentService) instanceof LiteralService,
+  );
+});
+
+test('ignores non-reference definition arguments while searching override references', () => {
+  const dependencyInjection = new DependencyInjection();
+
+  assert.deepEqual(
+    dependencyInjection.getDefinitionArgumentReferences({
+      _args: [null, {}, { id: 123 }, { id: 'service-id' }],
+    }),
+    ['service-id'],
+  );
+  assert.deepEqual(dependencyInjection.getDefinitionArgumentReferences({}), []);
+  assert.equal(
+    dependencyInjection.serviceIdReferencesService(
+      serviceIdFor(ConcreteRepository),
+      'ConcreteRepository',
+    ),
+    true,
+  );
+  assert.deepEqual(dependencyInjection.findReferencedServiceIds('literal'), []);
 });

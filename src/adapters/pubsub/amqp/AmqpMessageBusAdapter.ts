@@ -8,31 +8,41 @@ import amqplib, {
 } from 'amqplib';
 import { randomUUID } from 'node:crypto';
 
+import type { PublisherHook } from '../../../contracts/index.js';
 import type {
   Constructor,
   DomainEvent,
   DomainEventConsumer,
+  DomainEventConsumerContext,
+  DomainMessageBus,
   DomainEventPublisher,
 } from '../../../domain/index.js';
 import type { AmqpMessage } from './AmqpMessage.js';
 import type { AmqpMessageBusAdapterOptions } from './AmqpMessageBusAdapterOptions.js';
 import type { ConsumerContext } from './ConsumerContext.js';
+import type { DomainEventHandler } from './DomainEventHandler.js';
 
 import { Kernel } from '../../../Kernel.js';
+import { PublisherHookPipeline } from '../PublisherHookPipeline.js';
 import { InvalidDomainEventError } from './InvalidDomainEventError.js';
 import { NoFailedMessagesError } from './NoFailedMessagesError.js';
 
 export default class AmqpMessageBusAdapter
-  implements DomainEventConsumer, DomainEventPublisher
+  implements DomainEventConsumer, DomainEventPublisher, DomainMessageBus
 {
   private channelInstance: Channel | undefined;
   private connection: ChannelModel | undefined;
   private readonly delayConsumers: string[] = [];
   private exchange: string;
+  private readonly publisherHookPipeline: PublisherHookPipeline;
 
   constructor(private readonly options: AmqpMessageBusAdapterOptions = {}) {
     this.exchange =
       options.exchange ?? options.serviceName ?? process.env.SERVICE_NAME ?? '';
+    this.publisherHookPipeline = new PublisherHookPipeline(
+      options.publisherHooks,
+      options.publisherHookErrorPolicy,
+    );
   }
 
   private get dsn(): string {
@@ -81,6 +91,18 @@ export default class AmqpMessageBusAdapter
     );
   }
 
+  private getConsumerContext(
+    msg: ConsumeMessage | GetMessage,
+  ): DomainEventConsumerContext {
+    return {
+      metadata: {
+        headers: msg.properties.headers ?? {},
+        rawMessage: msg,
+        retries: Number(msg.properties.headers?.retries ?? 0),
+      },
+    };
+  }
+
   private async handle(
     msg: ConsumeMessage,
     context: ConsumerContext,
@@ -97,7 +119,7 @@ export default class AmqpMessageBusAdapter
         message,
       );
 
-      await context.handler(domainEvent);
+      await context.handler(domainEvent, this.getConsumerContext(msg));
     } catch (error) {
       await this.handleError(msg, message, context, error);
     }
@@ -330,7 +352,7 @@ export default class AmqpMessageBusAdapter
   private async retryDlxMessage(
     msg: ConsumeMessage | GetMessage,
     DomainEventInstance: Constructor<DomainEvent>,
-    handler: (event: DomainEvent) => Promise<void>,
+    handler: DomainEventHandler,
     channel: Channel,
   ): Promise<void> {
     const content = msg.content.toString();
@@ -344,7 +366,7 @@ export default class AmqpMessageBusAdapter
         message,
       );
 
-      await handler(domainEvent);
+      await handler(domainEvent, this.getConsumerContext(msg));
       this.logger?.info(`${content} successfully handled.`);
       channel.ack(msg);
     } catch (error: Error | unknown) {
@@ -377,7 +399,7 @@ export default class AmqpMessageBusAdapter
   public async consumeDlx(
     queueName: string,
     DomainEventInstance: Constructor<DomainEvent>,
-    handler: (event: DomainEvent) => Promise<void>,
+    handler: DomainEventHandler,
     messagesToRetry?: number,
   ): Promise<void> {
     const dlxQueueName = `${queueName}_dlx`;
@@ -419,7 +441,7 @@ export default class AmqpMessageBusAdapter
     bindingKey: string,
     DomainEventInstance: Constructor<DomainEvent>,
     exchange: string,
-    handler: (event: DomainEvent) => Promise<void>,
+    handler: DomainEventHandler,
   ): Promise<void> {
     const channel = await this.channel();
 
@@ -450,13 +472,37 @@ export default class AmqpMessageBusAdapter
     const channel = await this.channel();
 
     for (const event of domainEvents) {
-      channel.publish(
-        this.exchange,
-        event.eventName(),
-        Buffer.from(event.decode()),
-        this.opts(event),
+      await this.publisherHookPipeline.run(
+        {
+          domainEvent: event,
+          message: {
+            metadata: {
+              causationId: event.getCausationId(),
+              correlationId: event.getCorrelationId(),
+              eventId: event.eventId,
+            },
+            name: event.eventName(),
+            payload: event.attributes,
+          },
+          metadata: {
+            eventId: event.eventId,
+            exchange: this.exchange,
+          },
+          topic: event.eventName(),
+        },
+        () =>
+          channel.publish(
+            this.exchange,
+            event.eventName(),
+            Buffer.from(event.decode()),
+            this.opts(event),
+          ),
       );
     }
+  }
+
+  public registerPublisherHooks(...hooks: PublisherHook[]): void {
+    this.publisherHookPipeline.register(...hooks);
   }
 
   public async close(): Promise<void> {

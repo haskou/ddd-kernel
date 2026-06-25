@@ -1,4 +1,5 @@
 import type { DomainEvent } from './DomainEvent.js';
+import type { DomainEventConsumerContext } from './DomainEventConsumerContext.js';
 
 export abstract class DomainEventConsumer {
   public abstract consume(
@@ -6,6 +7,9 @@ export abstract class DomainEventConsumer {
     bindingKey: string,
     domainEvent: typeof DomainEvent,
     exchange: string,
-    handler: (event: DomainEvent) => Promise<void>,
+    handler: (
+      event: DomainEvent,
+      context?: DomainEventConsumerContext,
+    ) => Promise<void>,
   ): Promise<void>;
 }

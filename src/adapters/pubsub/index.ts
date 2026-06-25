@@ -1,4 +1,14 @@
 export * from './Consumer.js';
+export * from './ConsumerMiddlewarePipeline.js';
+export * from './CorrelationConsumerMiddleware.js';
+export * from './CorrelationConsumerMiddlewareOptions.js';
+export * from './DefaultPublisherHookErrorPolicy.js';
+export * from './IdempotencyConsumerMiddleware.js';
+export * from './IdempotencyConsumerMiddlewareOptions.js';
+export * from './InMemoryIdempotencyStore.js';
+export * from './PublisherHookPipeline.js';
+export * from './RetryConsumerMiddleware.js';
+export * from './RetryConsumerMiddlewareOptions.js';
 export * from './amqp/index.js';
 export * from './in-memory/index.js';
 export { default } from './Consumer.js';

@@ -1,3 +1,7 @@
+import type {
+  PublisherHook,
+  PublisherHookErrorPolicy,
+} from '../../../contracts/index.js';
 import type { Log } from '../../../infrastructure/logs/index.js';
 
 export interface AmqpMessageBusAdapterOptions {
@@ -5,6 +9,8 @@ export interface AmqpMessageBusAdapterOptions {
   readonly exchange?: string;
   readonly logger?: Log;
   readonly maxRetries?: number;
+  readonly publisherHookErrorPolicy?: PublisherHookErrorPolicy;
+  readonly publisherHooks?: PublisherHook[];
   readonly retryDelayInMilliseconds?: number;
   readonly serviceName?: string;
 }

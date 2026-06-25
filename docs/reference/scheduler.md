@@ -16,9 +16,12 @@ Register scheduler classes with `kernel.registerSchedulers(...)`.
 
 ## Error Policy
 
-Schedulers accept a `SchedulerErrorPolicy`:
+Schedulers accept a `SchedulerErrorPolicy` exported from
+`@haskou/ddd-kernel/scheduler`:
 
 ```ts
+import type { SchedulerErrorPolicy } from '@haskou/ddd-kernel/scheduler';
+
 class ReplicationScheduler extends Scheduler {
   constructor(errorPolicy: SchedulerErrorPolicy) {
     super(errorPolicy);
@@ -35,3 +38,19 @@ interface SchedulerErrorPolicy {
   handle(error: unknown, scheduler: Scheduler): Promise<void> | void;
 }
 ```
+
+Use `shouldSkip` for domain-specific transient states that should not be logged
+as scheduler failures, for example replicated state that is not ready yet:
+
+```ts
+const policy: SchedulerErrorPolicy = {
+  shouldSkip(error) {
+    return error instanceof ReplicatedStateNotReadyError;
+  },
+  handle(error, scheduler) {
+    logger.error(`${scheduler.getProcessName()} failed: ${String(error)}`);
+  },
+};
+```
+
+The default policy never skips and wraps failures in `ScheduledExecutionError`.

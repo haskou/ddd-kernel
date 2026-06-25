@@ -19,7 +19,11 @@ class FakeWebSocket extends EventEmitter {
 }
 
 test('registers clients, acknowledges connections and broadcasts to recipients', () => {
-  const event = new TestDomainEvent('aggregate-id', { name: 'Ada' }, 'event-id');
+  const event = new TestDomainEvent(
+    'aggregate-id',
+    { name: 'Ada' },
+    'event-id',
+  );
   const client = new FakeWebSocket();
   const hub = new WebSocketEventHub({
     resolve: (receivedEvent) => {
@@ -53,8 +57,14 @@ test('broadcasts custom messages to every connected open client', () => {
   hub.register('closed', closedClient);
   hub.broadcastToAll({ payload: true, type: 'custom' });
 
-  assert.deepEqual(firstClient.messages.at(-1), { payload: true, type: 'custom' });
-  assert.deepEqual(secondClient.messages.at(-1), { payload: true, type: 'custom' });
+  assert.deepEqual(firstClient.messages.at(-1), {
+    payload: true,
+    type: 'custom',
+  });
+  assert.deepEqual(secondClient.messages.at(-1), {
+    payload: true,
+    type: 'custom',
+  });
   assert.equal(closedClient.messages.length, 0);
 });
 

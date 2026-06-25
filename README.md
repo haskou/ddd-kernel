@@ -4,6 +4,7 @@
 [![codecov](https://codecov.io/gh/haskou/ddd-kernel/branch/main/graph/badge.svg)](https://codecov.io/gh/haskou/ddd-kernel)
 [![npm](https://img.shields.io/npm/v/@haskou/ddd-kernel.svg)](https://www.npmjs.com/package/@haskou/ddd-kernel)
 [![license](https://img.shields.io/npm/l/@haskou/ddd-kernel.svg)](LICENSE)
+[![Renovate](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com)
 
 Framework-agnostic DDD kernel for TypeScript applications and microservices.
 
@@ -44,12 +45,6 @@ Constructor injection is the preferred application pattern. Direct service
 lookup remains available for compatibility and integration boundaries, but it is
 not the primary dependency model.
 
-## Stability
-
-This project is still in the `0.x` line. The current API is intentionally small
-and covered by tests, but breaking changes may still happen while the kernel is
-being extracted and hardened from production service patterns.
-
 ## Documentation
 
 Usage guides, adapter authoring notes and API reference pages are published at:
@@ -65,10 +60,10 @@ CI publishes npm versions from pull requests merged into the default branch
 according to the source branch prefix:
 
 | Branch prefix | npm version bump |
-| --- | --- |
-| `fix/*` | Patch |
-| `feat/*` | Minor |
-| `break/*` | Major |
+| ------------- | ---------------- |
+| `fix/*`       | Patch            |
+| `feat/*`      | Minor            |
+| `break/*`     | Major            |
 
 Other branch names run validation only and do not publish.
 

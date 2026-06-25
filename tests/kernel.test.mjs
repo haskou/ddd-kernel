@@ -161,6 +161,25 @@ test('throws when DI is accessed before initialization', () => {
   );
 });
 
+test('keeps the instance kernel active after dependency injection', async () => {
+  const calls = [];
+  const kernel = new Kernel({
+    di: {
+      compile: async () => {
+        calls.push('compile');
+        new Kernel();
+      },
+      getService: () => undefined,
+    },
+  });
+
+  await kernel.dependencyInjection();
+
+  assert.deepEqual(calls, ['compile']);
+  assert.equal(Kernel.active, kernel);
+  assert.equal(Kernel.di, kernel.di);
+});
+
 test('configures dependency injection from kernel options', async () => {
   const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
   const sourceDirectory = path.join(temporaryDirectory, 'src');
@@ -174,7 +193,10 @@ test('configures dependency injection from kernel options', async () => {
     await import('node:fs/promises').then(({ mkdir }) =>
       mkdir(sourceDirectory, { recursive: true }),
     );
-    await writeFile(path.join(sourceDirectory, 'Service.ts'), 'export default class Service {}\n');
+    await writeFile(
+      path.join(sourceDirectory, 'Service.ts'),
+      'export default class Service {}\n',
+    );
   });
 
   try {
@@ -183,6 +205,73 @@ test('configures dependency injection from kernel options', async () => {
     await kernel.dependencyInjection();
 
     assert.ok(kernel.di);
+  } finally {
+    if (originalContainerBuild === undefined) {
+      delete process.env.CONTAINER_BUILD;
+    } else {
+      process.env.CONTAINER_BUILD = originalContainerBuild;
+    }
+  }
+});
+
+test('allows dependency injection options to override container build environment', async () => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const sourceDirectory = path.join(temporaryDirectory, 'src');
+  const servicesYamlPath = path.join(temporaryDirectory, 'services.yaml');
+  const originalContainerBuild = process.env.CONTAINER_BUILD;
+
+  process.env.CONTAINER_BUILD = 'false';
+  await import('node:fs/promises').then(({ mkdir }) =>
+    mkdir(sourceDirectory, { recursive: true }),
+  );
+  await writeFile(
+    path.join(sourceDirectory, 'Service.ts'),
+    'export default class Service {}\n',
+  );
+
+  try {
+    const kernel = new Kernel();
+
+    await kernel.dependencyInjection({
+      containerBuild: true,
+      servicesYamlPath,
+      sourceDirectory,
+    });
+
+    assert.equal(existsSync(servicesYamlPath), true);
+  } finally {
+    if (originalContainerBuild === undefined) {
+      delete process.env.CONTAINER_BUILD;
+    } else {
+      process.env.CONTAINER_BUILD = originalContainerBuild;
+    }
+  }
+});
+
+test('falls back to CONTAINER_BUILD when dependency injection options omit containerBuild', async () => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const sourceDirectory = path.join(temporaryDirectory, 'src');
+  const servicesYamlPath = path.join(temporaryDirectory, 'services.yaml');
+  const originalContainerBuild = process.env.CONTAINER_BUILD;
+
+  process.env.CONTAINER_BUILD = 'true';
+  await import('node:fs/promises').then(({ mkdir }) =>
+    mkdir(sourceDirectory, { recursive: true }),
+  );
+  await writeFile(
+    path.join(sourceDirectory, 'Service.ts'),
+    'export default class Service {}\n',
+  );
+
+  try {
+    const kernel = new Kernel();
+
+    await kernel.dependencyInjection({
+      servicesYamlPath,
+      sourceDirectory,
+    });
+
+    assert.equal(existsSync(servicesYamlPath), true);
   } finally {
     if (originalContainerBuild === undefined) {
       delete process.env.CONTAINER_BUILD;
