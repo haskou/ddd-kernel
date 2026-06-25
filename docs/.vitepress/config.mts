@@ -78,6 +78,33 @@ const referenceSidebar = [
   },
 ];
 
+const guideSidebar = [
+  {
+    text: 'Getting started',
+    items: [
+      { text: 'Introduction', link: '/getting-started/introduction' },
+      { text: 'Package map', link: '/getting-started/package-map' },
+      { text: 'Installation', link: '/getting-started/installation' },
+      {
+        text: 'Application startup',
+        link: '/getting-started/application-startup',
+      },
+    ],
+  },
+  {
+    text: 'Guides',
+    items: [
+      {
+        text: 'Dependency injection',
+        link: '/guides/dependency-injection',
+      },
+      { text: 'Adapters', link: '/guides/adapters' },
+      { text: 'AMQP pub/sub', link: '/guides/amqp-pubsub' },
+      { text: 'HTTP routes', link: '/guides/http-routes' },
+    ],
+  },
+];
+
 export default defineConfig({
   lang: 'en-US',
   title: 'DDD Kernel',
@@ -109,49 +136,14 @@ export default defineConfig({
     ],
 
     sidebar: {
-      '/getting-started/': [
-        {
-          text: 'Getting started',
-          items: [
-            { text: 'Introduction', link: '/getting-started/introduction' },
-            { text: 'Package map', link: '/getting-started/package-map' },
-            { text: 'Installation', link: '/getting-started/installation' },
-            {
-              text: 'Application startup',
-              link: '/getting-started/application-startup',
-            },
-          ],
-        },
-        {
-          text: 'Guides',
-          items: [
-            {
-              text: 'Dependency injection',
-              link: '/guides/dependency-injection',
-            },
-            { text: 'Adapters', link: '/guides/adapters' },
-            { text: 'AMQP pub/sub', link: '/guides/amqp-pubsub' },
-            { text: 'HTTP routes', link: '/guides/http-routes' },
-          ],
-        },
-      ],
-      '/guides/': [
-        {
-          text: 'Guides',
-          items: [
-            {
-              text: 'Dependency injection',
-              link: '/guides/dependency-injection',
-            },
-            { text: 'Adapters', link: '/guides/adapters' },
-            { text: 'AMQP pub/sub', link: '/guides/amqp-pubsub' },
-            { text: 'HTTP routes', link: '/guides/http-routes' },
-          ],
-        },
-        ...referenceSidebar,
-      ],
+      '/getting-started/': guideSidebar,
+      '/guides/': guideSidebar,
       '/reference/': referenceSidebar,
     },
+
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/haskou/ddd-kernel' },
+    ],
 
     outline: {
       level: [2, 3],
