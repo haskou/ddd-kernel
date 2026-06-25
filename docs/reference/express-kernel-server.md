@@ -16,6 +16,10 @@ The adapter can be configured either through constructor options or by calling
 registration methods before `run()`. The methods return the server instance, so
 they can be chained.
 
+`ExpressKernelServer` resolves `express` and `routing-controllers` from the
+consumer application's `process.cwd()`. This avoids duplicate runtime copies
+when the package is installed through a local `file:` dependency.
+
 ## External Controllers
 
 Applications can add controllers at the server boundary without registering them
@@ -37,6 +41,28 @@ The same can be done after construction:
 ```ts
 server.registerControllers(HealthController, MetricsController);
 ```
+
+## Routing Controllers Options
+
+Use `routingControllersOptions` to pass options directly to
+`useExpressServer`. `controllers` and `routePrefix` are still owned by
+`ExpressKernelServer`:
+
+```ts
+const server = new ExpressKernelServer({
+  kernel,
+  routingControllersOptions: {
+    cors: true,
+    defaultErrorHandler: false,
+    middlewares: [HttpRequestContextMiddleware],
+  },
+});
+```
+
+This is the place for routing-controllers behavior such as CORS, disabling its
+default error handler, or registering routing-controllers middleware classes.
+When enabling `cors`, install `cors` in the application; it is an optional peer
+dependency because HTTP support is optional.
 
 ## HTTP Middleware And Hooks
 
@@ -164,6 +190,33 @@ It maps malformed JSON to `400`, payload-too-large errors to `413`, HTTP errors
 with `httpCode`, `statusCode` or `status` to their status code, and unexpected
 errors to `500`. Validation errors exposed through an `errors` array are
 flattened into the response body.
+
+Applications can prepend domain-specific mappings with `handlers`:
+
+```ts
+server.registerErrorHandlers(
+  new HttpErrorHandler({
+    handlers: [
+      (error, response) => {
+        if (error.name !== 'DomainError') {
+          return false;
+        }
+
+        response.status(409).json({
+          code: error.name,
+          message: error.message,
+        });
+
+        return true;
+      },
+    ],
+    logger: kernel.logger,
+  }).handle,
+);
+```
+
+Custom handlers run after malformed JSON and payload-too-large handling, and
+before the generic HTTP/unhandled fallbacks.
 
 ## Registration API
 

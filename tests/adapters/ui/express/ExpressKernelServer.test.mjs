@@ -262,6 +262,44 @@ test('runs the full HTTP extension pipeline in registration order', async () => 
   }
 });
 
+test('forwards routing-controllers options to the HTTP runtime', async () => {
+  const server = new ExpressKernelServer({
+    hooks: [
+      {
+        handle: (app) => {
+          app.get('/cors', (request, response) => {
+            void request;
+            response.status(200).json({ ok: true });
+          });
+        },
+        phase: 'beforeErrors',
+      },
+    ],
+    kernel: new Kernel(),
+    port: 0,
+    routingControllersOptions: {
+      cors: true,
+      defaultErrorHandler: false,
+    },
+  });
+
+  await server.run();
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/cors`,
+      {
+        headers: { Origin: 'https://example.test' },
+      },
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('access-control-allow-origin'), '*');
+  } finally {
+    await server.close();
+  }
+});
+
 test('uses the default HTTP error handler when none is registered', async () => {
   const server = new ExpressKernelServer({
     hooks: [
@@ -473,6 +511,62 @@ test('logs unhandled HTTP errors in configured environments', async () => {
     } else {
       process.env.NODE_ENV = previousEnvironment;
     }
+  }
+});
+
+test('runs custom HTTP error handlers before generic HTTP errors', async () => {
+  const server = new ExpressKernelServer({
+    hooks: [
+      {
+        handle: (app) => {
+          app.get('/domain-error', (request, response, next) => {
+            void request;
+            void response;
+            const error = new Error('already exists');
+            error.name = 'DomainError';
+            next(error);
+          });
+        },
+        phase: 'beforeControllers',
+      },
+    ],
+    kernel: new Kernel(),
+    port: 0,
+  });
+
+  server.registerErrorHandlers(
+    new HttpErrorHandler({
+      handlers: [
+        (error, response) => {
+          if (error.name !== 'DomainError') {
+            return false;
+          }
+
+          response.status(409).json({
+            code: error.name,
+            message: error.message,
+          });
+
+          return true;
+        },
+      ],
+    }).handle,
+  );
+
+  await server.run();
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/domain-error`,
+    );
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), {
+      code: 'DomainError',
+      message: 'already exists',
+    });
+  } finally {
+    await server.close();
   }
 });
 

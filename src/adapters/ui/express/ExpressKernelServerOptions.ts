@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
+import type { RoutingControllersOptions } from 'routing-controllers';
 
 import type { Kernel } from '../../../Kernel.js';
 import type { ExpressAppHook } from './ExpressAppHook.js';
@@ -17,6 +18,10 @@ export interface ExpressKernelServerOptions {
   readonly preControllerMiddlewares?: RequestHandler[];
   readonly port?: number;
   readonly routePrefix?: string;
+  readonly routingControllersOptions?: Omit<
+    RoutingControllersOptions,
+    'controllers' | 'routePrefix'
+  >;
   /**
    * @deprecated Prefer `hooks` with `phase: 'beforeErrors'`.
    */

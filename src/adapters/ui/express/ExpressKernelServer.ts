@@ -1,8 +1,7 @@
-import express, {
-  type ErrorRequestHandler,
-  type RequestHandler,
-} from 'express';
-import { useContainer, useExpressServer } from 'routing-controllers';
+import type { ErrorRequestHandler, RequestHandler } from 'express';
+
+import { createRequire } from 'node:module';
+import path from 'node:path';
 
 import type { ExpressAppHook } from './ExpressAppHook.js';
 import type { ExpressController } from './ExpressController.js';
@@ -12,6 +11,10 @@ import type { HttpApp } from './HttpApp.js';
 import type { HttpServer } from './HttpServer.js';
 
 export class ExpressKernelServer {
+  private readonly applicationRequire = createRequire(
+    path.resolve(process.cwd(), 'package.json'),
+  );
+
   private readonly afterControllersHooks: ExpressAppHook[];
 
   private appInstance: HttpApp | undefined;
@@ -56,6 +59,8 @@ export class ExpressKernelServer {
   }
 
   private configureControllerContainer(): void {
+    const { useContainer } = this.getRoutingControllers();
+
     useContainer(
       {
         /* c8 ignore next */
@@ -67,6 +72,20 @@ export class ExpressKernelServer {
         fallbackOnErrors: true,
       },
     );
+  }
+
+  private getExpress(): typeof import('express') {
+    return this.applicationRequire('express') as typeof import('express');
+  }
+
+  private getRoutingControllers(): Pick<
+    typeof import('routing-controllers'),
+    'useContainer' | 'useExpressServer'
+  > {
+    return this.applicationRequire('routing-controllers') as Pick<
+      typeof import('routing-controllers'),
+      'useContainer' | 'useExpressServer'
+    >;
   }
 
   private applyErrorHandlers(app: HttpApp): void {
@@ -235,6 +254,8 @@ export class ExpressKernelServer {
       ...this.options.kernel.getRoutes(),
       ...this.controllers,
     ];
+    const express = this.getExpress();
+    const { useExpressServer } = this.getRoutingControllers();
     const app = express() as HttpApp;
 
     this.applyMiddlewares(app, this.middlewares);
@@ -243,6 +264,7 @@ export class ExpressKernelServer {
     await this.runPhaseHooks('beforeControllers', app);
     this.configureControllerContainer();
     useExpressServer(app, {
+      ...this.options.routingControllersOptions,
       controllers,
       routePrefix: this.options.routePrefix,
     });

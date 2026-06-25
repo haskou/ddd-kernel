@@ -16,9 +16,12 @@ import type { ValidationError } from './ValidationError.js';
 import { HttpRouteStatusEnum } from '../../../contracts/ui/index.js';
 
 export class HttpErrorHandler implements ExpressErrorMiddlewareInterface {
+  private readonly handlers: readonly ErrorResponseHandler[];
+
   private readonly exposeUnhandledErrorsIn: readonly string[];
 
   constructor(private readonly options: HttpErrorHandlerOptions = {}) {
+    this.handlers = options.handlers ?? [];
     this.exposeUnhandledErrorsIn = options.exposeUnhandledErrorsIn ?? [
       'local',
       'test',
@@ -145,6 +148,7 @@ export class HttpErrorHandler implements ExpressErrorMiddlewareInterface {
     const handlers: ErrorResponseHandler[] = [
       this.handleSyntaxError.bind(this),
       this.handlePayloadTooLargeError.bind(this),
+      ...this.handlers,
       this.handleHttpError.bind(this),
     ];
 
