@@ -7,5 +7,8 @@ test('describes the missing dependency token', () => {
   const error = new DependencyNotFoundError('UserRepository');
 
   assert.equal(error.name, 'DependencyNotFoundError');
-  assert.equal(error.message, 'Dependency not found for token "UserRepository".');
+  assert.equal(
+    error.message,
+    'Dependency not found for token "UserRepository".',
+  );
 });
