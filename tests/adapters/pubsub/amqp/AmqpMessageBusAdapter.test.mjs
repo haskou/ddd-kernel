@@ -56,7 +56,10 @@ class FakeChannel {
   checkQueue(queueName) {
     this.calls.push(['checkQueue', queueName]);
 
-    return { consumerCount: this.consumerCount, messageCount: this.messageCount };
+    return {
+      consumerCount: this.consumerCount,
+      messageCount: this.messageCount,
+    };
   }
 
   close() {
@@ -134,13 +137,17 @@ const withAmqpConnect = async (channel, run) => {
 
 test('publishes domain events and closes channel resources', async () => {
   const channel = new FakeChannel();
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const hookCalls = [];
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     dsn: 'amqp://localhost',
     exchange: 'domain',
     serviceName: 'service',
+  });
+  adapter.registerPublisherHooks({
+    afterPublish: (context) => hookCalls.push(['after', context.topic]),
+    beforePublish: (context) => hookCalls.push(['before', context.topic]),
   });
   const event = new TestDomainEvent(
     'aggregate-id',
@@ -156,16 +163,25 @@ test('publishes domain events and closes channel resources', async () => {
     assert.equal(connection.calls.length, 1);
   });
 
-  assert.equal(channel.calls.some(([name]) => name === 'publish'), true);
-  assert.equal(channel.calls.some(([name]) => name === 'channel:close'), true);
+  assert.equal(
+    channel.calls.some(([name]) => name === 'publish'),
+    true,
+  );
+  assert.equal(
+    channel.calls.some(([name]) => name === 'channel:close'),
+    true,
+  );
+  assert.deepEqual(hookCalls, [
+    ['before', 'test.domain-event'],
+    ['after', 'test.domain-event'],
+  ]);
 });
 
 test('consumes AMQP messages and acknowledges handled events', async () => {
   const channel = new FakeChannel();
   const handled = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     dsn: 'amqp://localhost',
     exchange: 'domain',
@@ -192,9 +208,8 @@ test('consumes AMQP messages and acknowledges handled events', async () => {
 test('retries failed messages and registers delayed consumers once', async () => {
   const channel = new FakeChannel();
   const logs = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     logger: {
@@ -230,15 +245,17 @@ test('retries failed messages and registers delayed consumers once', async () =>
 
   assert.equal(channel.calls.filter(([name]) => name === 'consume').length, 1);
   assert.equal(channel.calls.filter(([name]) => name === 'publish').length, 2);
-  assert.equal(logs.some(([, messageText]) => messageText === 'Retry # 1'), true);
+  assert.equal(
+    logs.some(([, messageText]) => messageText === 'Retry # 1'),
+    true,
+  );
 });
 
 test('sends exhausted messages to DLX and logs publish failures', async () => {
   const channel = new FakeChannel();
   const logs = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     logger: {
@@ -298,15 +315,20 @@ test('consumes DLX messages with success, nack and no-message paths', async () =
     );
   });
 
-  assert.equal(channel.calls.some(([name]) => name === 'ack'), true);
-  assert.equal(channel.calls.some(([name]) => name === 'nack'), true);
+  assert.equal(
+    channel.calls.some(([name]) => name === 'ack'),
+    true,
+  );
+  assert.equal(
+    channel.calls.some(([name]) => name === 'nack'),
+    true,
+  );
 });
 
 test('checks queue bindings for registered consumers', async () => {
   const channel = new FakeChannel();
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({ dsn: 'amqp://localhost' });
   const kernel = new Kernel();
 
@@ -329,9 +351,8 @@ test('uses environment retry delay and logs non-Error DLX retry failures', async
   const previousRetryDelay = process.env.TRANSPORT_RETRY_DELAY;
   const channel = new FakeChannel();
   const logs = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     logger: {
@@ -370,9 +391,8 @@ test('uses environment retry delay and logs non-Error DLX retry failures', async
 test('handles missing retry headers and cancels delayed consumers on invalid retry payloads', async () => {
   const channel = new FakeChannel();
   const logs = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     logger: {
@@ -400,16 +420,18 @@ test('handles missing retry headers and cancels delayed consumers on invalid ret
   );
   await adapter.retry(null, {}, context);
 
-  assert.equal(channel.calls.some(([name]) => name === 'cancel'), true);
+  assert.equal(
+    channel.calls.some(([name]) => name === 'cancel'),
+    true,
+  );
   assert.equal(logs.includes('Invalid domain event: null'), true);
 });
 
 test('handles AMQP messages that fail during handler execution', async () => {
   const channel = new FakeChannel();
   const logs = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     logger: {
@@ -438,9 +460,8 @@ test('handles AMQP messages that fail during handler execution', async () => {
 test('supports AMQP messages without occurred_on and retry publish errors', async () => {
   const channel = new FakeChannel();
   const logs = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     logger: {
@@ -471,9 +492,8 @@ test('supports AMQP messages without occurred_on and retry publish errors', asyn
 
 test('uses numeric retry delay from environment', async () => {
   const previousRetryDelay = process.env.TRANSPORT_RETRY_DELAY;
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
 
   process.env.TRANSPORT_RETRY_DELAY = '25';
 
@@ -493,9 +513,8 @@ test('uses numeric retry delay from environment', async () => {
 test('reads AMQP DSN and max retries from environment defaults', async () => {
   const previousDsn = process.env.TRANSPORT_DSN;
   const previousRetries = process.env.TRANSPORT_MAX_RETRIES;
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
 
   delete process.env.TRANSPORT_MAX_RETRIES;
   process.env.TRANSPORT_DSN = 'amqp://environment';
@@ -531,9 +550,8 @@ test('reads AMQP DSN and max retries from environment defaults', async () => {
 test('handles delayed consumer messages and removes delayed consumer state', async () => {
   const channel = new FakeChannel();
   const handled = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     retryDelayInMilliseconds: 0,
@@ -563,9 +581,8 @@ test('logs non-Error retry publish failures', async () => {
 
   const channel = new FakeChannel();
   const logs = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     logger: {
@@ -595,9 +612,8 @@ test('logs non-Error retry publish failures', async () => {
 test('logs string publish failures when sending to DLX', async () => {
   const channel = new FakeChannel();
   const logs = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     exchange: 'domain',
     logger: {
@@ -622,22 +638,23 @@ test('logs string publish failures when sending to DLX', async () => {
 });
 
 test('throws when a channel cannot be created', async () => {
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({ dsn: 'amqp://localhost' });
 
   adapter.connect = async () => {};
 
-  await assert.rejects(() => adapter.channel(), /AMQP channel could not be created/);
+  await assert.rejects(
+    () => adapter.channel(),
+    /AMQP channel could not be created/,
+  );
 });
 
 test('reconnects consumers when AMQP channel emits close or error', async () => {
   const channel = new FakeChannel();
   const calls = [];
-  const { default: AmqpMessageBusAdapter } = await import(
-    '../../../../dist/adapters/pubsub/amqp/index.js'
-  );
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
   const adapter = new AmqpMessageBusAdapter({
     dsn: 'amqp://localhost',
     logger: {
@@ -650,7 +667,9 @@ test('reconnects consumers when AMQP channel emits close or error', async () => 
   const kernel = new Kernel();
 
   kernel.removeConsumers();
-  kernel.registerConsumerInstances({ init: async () => calls.push(['consumer:init']) });
+  kernel.registerConsumerInstances({
+    init: async () => calls.push(['consumer:init']),
+  });
 
   await withAmqpConnect(channel, async () => {
     await adapter.channel();

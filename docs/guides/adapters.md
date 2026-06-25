@@ -27,3 +27,41 @@ export default class MyPublisher implements DomainEventPublisher {
 
 If an adapter needs a third-party dependency, expose it through a subpath and
 mark that dependency as an optional peer dependency.
+
+## Message Bus Hooks
+
+Message bus adapters can expose publisher hooks so applications can attach
+replicated publishers, websocket notifications, tracing or auditing without
+wrapping the adapter in an application-local class.
+
+```ts
+import AmqpMessageBusAdapter from '@haskou/ddd-kernel/adapters/pubsub/amqp';
+
+const messageBus = new AmqpMessageBusAdapter({
+  publisherHooks: [
+    {
+      afterPublish: async ({ message }) => {
+        await websocketPublisher.publish(message);
+      },
+    },
+  ],
+});
+```
+
+Custom adapters should implement the `MessageBus` contract and delegate hook
+execution through `PublisherHookPipeline`:
+
+```ts
+import {
+  PublisherHookPipeline,
+  type PublisherHook,
+} from '@haskou/ddd-kernel/adapters/pubsub';
+
+export default class CustomMessageBus {
+  private readonly hooks = new PublisherHookPipeline();
+
+  public registerPublisherHooks(...hooks: PublisherHook[]) {
+    this.hooks.register(...hooks);
+  }
+}
+```

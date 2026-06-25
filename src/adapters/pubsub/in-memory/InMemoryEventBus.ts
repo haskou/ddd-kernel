@@ -2,7 +2,10 @@ import type {
   DomainEvent,
   HandlerContext,
   MessageHandler,
+  PublisherHook,
 } from '../../../contracts/index.js';
+
+import { PublisherHookPipeline } from '../PublisherHookPipeline.js';
 
 export class InMemoryEventBus {
   private readonly handlers = new Map<
@@ -10,7 +13,14 @@ export class InMemoryEventBus {
     MessageHandler<DomainEvent, void>[]
   >();
 
-  constructor(private readonly context: HandlerContext) {}
+  private readonly publisherHookPipeline: PublisherHookPipeline;
+
+  constructor(
+    private readonly context: HandlerContext,
+    publisherHooks: readonly PublisherHook[] = [],
+  ) {
+    this.publisherHookPipeline = new PublisherHookPipeline(publisherHooks);
+  }
 
   public subscribe<TEvent extends DomainEvent>(
     name: TEvent['name'],
@@ -27,8 +37,17 @@ export class InMemoryEventBus {
   ): Promise<void> {
     const handlers = this.handlers.get(event.name) ?? [];
 
-    for (const handler of handlers) {
-      await handler(event, this.context);
-    }
+    await this.publisherHookPipeline.run(
+      { message: event, metadata: event.metadata ?? {}, topic: event.name },
+      async () => {
+        for (const handler of handlers) {
+          await handler(event, this.context);
+        }
+      },
+    );
+  }
+
+  public registerPublisherHooks(...hooks: PublisherHook[]): void {
+    this.publisherHookPipeline.register(...hooks);
   }
 }

@@ -16,6 +16,7 @@ new AmqpMessageBusAdapter({
   dsn: 'amqp://localhost',
   exchange: 'users-service',
   maxRetries: 3,
+  publisherHooks: [replicatedPublisherHook],
   retryDelayInMilliseconds: 1000,
   serviceName: 'users-service',
 });
@@ -30,3 +31,7 @@ Environment variables:
 
 Failed messages are sent to `<queue>_dlx`. Use `consumeDlx` to retry failed
 messages.
+
+`publisherHooks` run around each domain event published by the adapter. Use them
+for transport-adjacent fan-out such as websocket updates, replicated-state
+publishers, tracing or audit logs.

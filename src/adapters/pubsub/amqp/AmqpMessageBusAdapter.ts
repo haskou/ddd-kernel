@@ -8,6 +8,7 @@ import amqplib, {
 } from 'amqplib';
 import { randomUUID } from 'node:crypto';
 
+import type { PublisherHook } from '../../../contracts/index.js';
 import type {
   Constructor,
   DomainEvent,
@@ -19,6 +20,7 @@ import type { AmqpMessageBusAdapterOptions } from './AmqpMessageBusAdapterOption
 import type { ConsumerContext } from './ConsumerContext.js';
 
 import { Kernel } from '../../../Kernel.js';
+import { PublisherHookPipeline } from '../PublisherHookPipeline.js';
 import { InvalidDomainEventError } from './InvalidDomainEventError.js';
 import { NoFailedMessagesError } from './NoFailedMessagesError.js';
 
@@ -29,10 +31,14 @@ export default class AmqpMessageBusAdapter
   private connection: ChannelModel | undefined;
   private readonly delayConsumers: string[] = [];
   private exchange: string;
+  private readonly publisherHookPipeline: PublisherHookPipeline;
 
   constructor(private readonly options: AmqpMessageBusAdapterOptions = {}) {
     this.exchange =
       options.exchange ?? options.serviceName ?? process.env.SERVICE_NAME ?? '';
+    this.publisherHookPipeline = new PublisherHookPipeline(
+      options.publisherHooks,
+    );
   }
 
   private get dsn(): string {
@@ -450,13 +456,36 @@ export default class AmqpMessageBusAdapter
     const channel = await this.channel();
 
     for (const event of domainEvents) {
-      channel.publish(
-        this.exchange,
-        event.eventName(),
-        Buffer.from(event.decode()),
-        this.opts(event),
+      await this.publisherHookPipeline.run(
+        {
+          message: {
+            metadata: {
+              causationId: event.getCausationId(),
+              correlationId: event.getCorrelationId(),
+              eventId: event.eventId,
+            },
+            name: event.eventName(),
+            payload: event.attributes,
+          },
+          metadata: {
+            eventId: event.eventId,
+            exchange: this.exchange,
+          },
+          topic: event.eventName(),
+        },
+        () =>
+          channel.publish(
+            this.exchange,
+            event.eventName(),
+            Buffer.from(event.decode()),
+            this.opts(event),
+          ),
       );
     }
+  }
+
+  public registerPublisherHooks(...hooks: PublisherHook[]): void {
+    this.publisherHookPipeline.register(...hooks);
   }
 
   public async close(): Promise<void> {

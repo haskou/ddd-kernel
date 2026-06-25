@@ -2,8 +2,11 @@ import type {
   HandlerContext,
   Message,
   MessageHandler,
+  PublisherHook,
   Subscription,
 } from '../../../contracts/index.js';
+
+import { PublisherHookPipeline } from '../PublisherHookPipeline.js';
 
 export class InMemoryPubSub {
   private readonly consumers = new Map<
@@ -11,7 +14,14 @@ export class InMemoryPubSub {
     Set<MessageHandler<Message, void>>
   >();
 
-  constructor(private readonly context: HandlerContext) {}
+  private readonly publisherHookPipeline: PublisherHookPipeline;
+
+  constructor(
+    private readonly context: HandlerContext,
+    publisherHooks: readonly PublisherHook[] = [],
+  ) {
+    this.publisherHookPipeline = new PublisherHookPipeline(publisherHooks);
+  }
 
   public async publish<TMessage extends Message>(
     topic: string,
@@ -19,9 +29,14 @@ export class InMemoryPubSub {
   ): Promise<void> {
     const consumers = this.consumers.get(topic) ?? new Set();
 
-    for (const consumer of consumers) {
-      await consumer(message, this.context);
-    }
+    await this.publisherHookPipeline.run(
+      { message, metadata: message.metadata ?? {}, topic },
+      async () => {
+        for (const consumer of consumers) {
+          await consumer(message, this.context);
+        }
+      },
+    );
   }
 
   public subscribe<TMessage extends Message>(
@@ -42,5 +57,9 @@ export class InMemoryPubSub {
         return Promise.resolve();
       },
     });
+  }
+
+  public registerPublisherHooks(...hooks: PublisherHook[]): void {
+    this.publisherHookPipeline.register(...hooks);
   }
 }
