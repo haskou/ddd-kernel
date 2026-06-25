@@ -6,6 +6,85 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "adapters": [
+        "dist/adapters/index.d.ts"
+      ],
+      "adapters/db": [
+        "dist/adapters/db/index.d.ts"
+      ],
+      "adapters/db/in-memory": [
+        "dist/adapters/db/in-memory/index.d.ts"
+      ],
+      "adapters/db/mongo": [
+        "dist/adapters/db/mongo/index.d.ts"
+      ],
+      "adapters/kernel": [
+        "dist/adapters/kernel/index.d.ts"
+      ],
+      "adapters/kernel/console": [
+        "dist/adapters/kernel/console/index.d.ts"
+      ],
+      "adapters/pubsub": [
+        "dist/adapters/pubsub/index.d.ts"
+      ],
+      "adapters/pubsub/amqp": [
+        "dist/adapters/pubsub/amqp/index.d.ts"
+      ],
+      "adapters/pubsub/in-memory": [
+        "dist/adapters/pubsub/in-memory/index.d.ts"
+      ],
+      "adapters/ui": [
+        "dist/adapters/ui/index.d.ts"
+      ],
+      "adapters/ui/express": [
+        "dist/adapters/ui/express/index.d.ts"
+      ],
+      "adapters/ui/routes": [
+        "dist/adapters/ui/routes/index.d.ts"
+      ],
+      "contracts": [
+        "dist/contracts/index.d.ts"
+      ],
+      "contracts/db": [
+        "dist/contracts/db/index.d.ts"
+      ],
+      "contracts/kernel": [
+        "dist/contracts/kernel/index.d.ts"
+      ],
+      "contracts/pubsub": [
+        "dist/contracts/pubsub/index.d.ts"
+      ],
+      "contracts/ui": [
+        "dist/contracts/ui/index.d.ts"
+      ],
+      "dependency-injection": [
+        "dist/infrastructure/dependency-injection/index.d.ts"
+      ],
+      "domain": [
+        "dist/domain/index.d.ts"
+      ],
+      "errors": [
+        "dist/errors/index.d.ts"
+      ],
+      "express": [
+        "dist/adapters/ui/express/index.d.ts"
+      ],
+      "lifecycle": [
+        "dist/infrastructure/lifecycle/index.d.ts"
+      ],
+      "logs": [
+        "dist/infrastructure/logs/index.d.ts"
+      ],
+      "scheduler": [
+        "dist/infrastructure/scheduler/index.d.ts"
+      ],
+      "websocket": [
+        "dist/infrastructure/websocket/index.d.ts"
+      ]
+    }
+  },
   "publishConfig": {
     "access": "public"
   },

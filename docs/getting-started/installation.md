@@ -24,3 +24,10 @@ MongoDB repositories require:
 ```bash
 yarn add mongodb
 ```
+
+## TypeScript Resolution
+
+The package publishes ESM, CommonJS and declaration files for every public
+subpath. Modern projects should prefer `moduleResolution: "NodeNext"` or
+`"Bundler"`, but declaration mappings are also provided for projects still using
+classic `moduleResolution: "node"`.
