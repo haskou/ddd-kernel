@@ -7,6 +7,16 @@ Adapters live under the same high-level groups as contracts:
 - `adapters/ui` implements HTTP/UI runtime concerns.
 - `adapters/kernel` implements kernel-level defaults such as logging.
 
+The package already includes these adapters:
+
+| Group               | Included adapters                                                         |
+| ------------------- | ------------------------------------------------------------------------- |
+| Pub/sub             | `InMemoryPubSub`, `AmqpMessageBusAdapter`, consumer middleware primitives |
+| DB                  | `InMemoryRepository`, `MongoRepository`                                   |
+| UI                  | `ExpressKernelServer`, `HttpErrorHandler`, route base classes             |
+| Kernel/logging      | `ConsoleKernelLogger`, `WinstonLogger`                                    |
+| Scheduler/WebSocket | `Scheduler`, `WebSocketEventHub`, `WebSocketRealtimeServer`               |
+
 An adapter should implement a contract or abstract class from the domain/kernel
 surface and stay free of application-specific concepts.
 
