@@ -50,7 +50,7 @@ Most applications call this once during startup:
 
 ```ts
 await kernel.dependencyInjection({
-  containerBuild: process.env.NODE_ENV === 'production',
+  containerBuild: process.env.NODE_ENV !== 'production',
   overrides: [],
 });
 ```
@@ -61,6 +61,10 @@ await kernel.dependencyInjection({
 | `overrides`        | `[]`                                                   | Replace a token with `useClass`, `useValue` or `useFactory`.                                     |
 | `servicesYamlPath` | Constructor option or `config/container/services.yaml` | Container YAML path for this compile.                                                            |
 | `sourceDirectory`  | Constructor option or `src`                            | Source tree used when generating the container.                                                  |
+
+Use `containerBuild: true` while generating `services.yaml` from the source
+tree. Production runtimes should usually leave it `false` and load the YAML
+shipped with the application artifact.
 
 Prefer constructor injection in application classes. Use overrides at bootstrap
 or test setup to choose infrastructure.
