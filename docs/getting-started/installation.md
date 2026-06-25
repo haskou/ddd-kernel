@@ -16,7 +16,7 @@ yarn add amqplib
 Express routes require:
 
 ```bash
-yarn add express routing-controllers reflect-metadata
+yarn add express routing-controllers reflect-metadata class-transformer class-validator
 ```
 
 MongoDB repositories require:
