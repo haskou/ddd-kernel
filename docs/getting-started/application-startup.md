@@ -11,9 +11,14 @@ import { applicationConsumers } from './apps/ApplicationConsumers.js';
 import { recurringSchedulers } from './apps/ApplicationSchedulers.js';
 import GetUserByIdRoute from './apps/api/routes/GetUserByIdRoute.js';
 
-const kernel = new Kernel();
+const kernel = new Kernel({
+  sourceDirectory: 'src',
+  servicesYamlPath: 'config/container/services.yaml',
+});
 
-await kernel.dependencyInjection();
+await kernel.dependencyInjection({
+  containerBuild: process.env.CONTAINER_BUILD === 'true',
+});
 kernel.registerRoutes(GetUserByIdRoute);
 kernel.registerConsumers(...applicationConsumers);
 kernel.registerSchedulers(...recurringSchedulers);
@@ -30,6 +35,9 @@ kernel.logger.info('Application running on port 3000');
 
 `CONTAINER_BUILD=true` regenerates `config/container/services.yaml`. Without it,
 the generated YAML is loaded.
+
+`new Kernel(...)` configures defaults for the runtime. `kernel.dependencyInjection(...)`
+can override the DI-specific values for a particular boot.
 
 Call `kernel.shutdown()` from your process signal handlers to stop consumers,
 stop schedulers, close servers, flush logs and release connections registered

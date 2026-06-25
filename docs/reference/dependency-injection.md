@@ -1,6 +1,19 @@
 # DependencyInjection
 
-Wrapper around `node-dependency-injection`.
+Dependency injection wrapper used by `Kernel`.
+
+Most applications should configure DI through the kernel:
+
+```ts
+const kernel = new Kernel();
+
+await kernel.dependencyInjection({
+  containerBuild: process.env.NODE_ENV === 'production',
+});
+```
+
+Use `DependencyInjection` directly only when a test or custom runtime needs to
+build the container without a full kernel instance.
 
 ```ts
 import { DependencyInjection } from '@haskou/ddd-kernel/dependency-injection';
@@ -14,7 +27,18 @@ const di = DependencyInjection.configure({
 await di.compile();
 ```
 
-Most applications call `kernel.dependencyInjection()` instead.
+## Options
+
+| Option             | Required                                       | Purpose                                                                                                                                                                               |
+| ------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `containerBuild`   | No                                             | Regenerate `services.yaml` from default-exported classes when `true`; load the existing YAML when `false`. If omitted through the kernel, `CONTAINER_BUILD=true` is used as fallback. |
+| `servicesYamlPath` | Yes for direct `DependencyInjection.configure` | Path to the generated or committed container YAML file.                                                                                                                               |
+| `sourceDirectory`  | Yes for direct `DependencyInjection.configure` | Source tree scanned when generating the container.                                                                                                                                    |
+| `overrides`        | No                                             | Runtime or test replacements applied before container compilation.                                                                                                                    |
+
+The generated container follows the project convention: one default-exported
+class per file. Application classes should receive dependencies through their
+constructor.
 
 ## Overrides
 

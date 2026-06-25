@@ -6,8 +6,19 @@ Base class for HTTP routes.
 import Route from '@haskou/ddd-kernel/adapters/ui/routes';
 
 export default class GetUserRoute extends Route {
-  private readonly finder = this.get<UserFinder>(UserFinder);
+  constructor(private readonly finder: UserFinder) {
+    super();
+  }
 }
 ```
 
-`get<T>()` resolves services through `Kernel.di`.
+Routes are registered with the kernel and resolved through constructor
+injection:
+
+```ts
+kernel.registerRoutes(GetUserRoute);
+```
+
+`Route` still exposes `get<T>()` for compatibility with older code, but
+constructor injection is the recommended path because it keeps routes easier to
+test.

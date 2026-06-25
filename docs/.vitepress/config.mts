@@ -15,7 +15,7 @@ const referenceSidebar = [
     ],
   },
   {
-    text: 'Domain',
+    text: 'Contracts And Domain',
     collapsed: false,
     items: [
       { text: 'AggregateRoot', link: '/reference/aggregate-root' },
@@ -28,7 +28,7 @@ const referenceSidebar = [
     ],
   },
   {
-    text: 'Adapters',
+    text: 'Pub/Sub',
     collapsed: false,
     items: [
       { text: 'Consumer', link: '/reference/consumer' },
@@ -37,12 +37,38 @@ const referenceSidebar = [
         link: '/reference/amqp-message-bus-adapter',
       },
       { text: 'InMemoryPubSub', link: '/reference/in-memory-pub-sub' },
+    ],
+  },
+  {
+    text: 'DB',
+    collapsed: false,
+    items: [
       { text: 'InMemoryRepository', link: '/reference/in-memory-repository' },
       { text: 'MongoRepository', link: '/reference/mongo-repository' },
+    ],
+  },
+  {
+    text: 'UI',
+    collapsed: false,
+    items: [
       { text: 'ExpressKernelServer', link: '/reference/express-kernel-server' },
       { text: 'Route', link: '/reference/route' },
-      { text: 'Scheduler', link: '/reference/scheduler' },
-      { text: 'WinstonLogger', link: '/reference/winston-logger' },
+    ],
+  },
+  {
+    text: 'Scheduling',
+    collapsed: false,
+    items: [{ text: 'Scheduler', link: '/reference/scheduler' }],
+  },
+  {
+    text: 'Logs',
+    collapsed: false,
+    items: [{ text: 'WinstonLogger', link: '/reference/winston-logger' }],
+  },
+  {
+    text: 'WebSocket',
+    collapsed: false,
+    items: [
       { text: 'WebSocketEventHub', link: '/reference/web-socket-event-hub' },
       {
         text: 'WebSocketRealtimeServer',
@@ -78,7 +104,7 @@ export default defineConfig({
 
     nav: [
       { text: 'Guide', link: '/getting-started/introduction' },
-      { text: 'Adapters', link: '/guides/adapters' },
+      { text: 'Package Map', link: '/getting-started/package-map' },
       { text: 'Reference', link: '/reference/' },
     ],
 
@@ -88,6 +114,7 @@ export default defineConfig({
           text: 'Getting started',
           items: [
             { text: 'Introduction', link: '/getting-started/introduction' },
+            { text: 'Package map', link: '/getting-started/package-map' },
             { text: 'Installation', link: '/getting-started/installation' },
             {
               text: 'Application startup',
