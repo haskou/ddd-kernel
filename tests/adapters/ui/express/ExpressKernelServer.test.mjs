@@ -2,170 +2,355 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { ExpressKernelServer } from '../../../../dist/adapters/ui/express/index.js';
+import { Kernel } from '../../../../dist/index.js';
 
-test('throws when app or server are requested before running', () => {
+const getServerPort = (server) => {
+  const address = server.server.address();
+
+  assert.notEqual(address, null);
+  assert.equal(typeof address, 'object');
+
+  return address.port;
+};
+
+test('registers middleware, hooks and error handlers before running', async () => {
+  const calls = [];
+  const kernel = new Kernel();
   const server = new ExpressKernelServer({
-    kernel: { getRoutes: () => [] },
+    kernel,
+    middlewares: [
+      (request, response, next) => {
+        void request;
+        void response;
+        calls.push('options:middleware');
+        next();
+      },
+    ],
+    port: 0,
+  });
+
+  server
+    .registerMiddlewares((request, response, next) => {
+      void request;
+      void response;
+      calls.push('registered:middleware');
+      next();
+    })
+    .registerHooks({
+      handle: (app) => {
+        app.get('/boom', (request, response, next) => {
+          void request;
+          void response;
+          calls.push('hook:route');
+          next(new Error('boom'));
+        });
+      },
+      phase: 'beforeControllers',
+    })
+    .registerErrorHandlers((error, request, response, next) => {
+      void request;
+      void next;
+      calls.push('registered:error');
+      response.status(409).json({
+        message: error instanceof Error ? error.message : String(error),
+      });
+    });
+
+  await server.run();
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/boom`,
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(body, { message: 'boom' });
+    assert.deepEqual(calls, [
+      'options:middleware',
+      'registered:middleware',
+      'hook:route',
+      'registered:error',
+    ]);
+  } finally {
+    await server.close();
+  }
+});
+
+test('runs the full HTTP extension pipeline in registration order', async () => {
+  const calls = [];
+  const kernel = new Kernel();
+  const server = new ExpressKernelServer({
+    afterControllersHooks: [
+      (app) => {
+        app.use((request, response, next) => {
+          void request;
+          void response;
+          calls.push('options:after-controller-hook');
+          next();
+        });
+      },
+    ],
+    beforeControllersHooks: [
+      (app) => {
+        app.use((request, response, next) => {
+          void request;
+          void response;
+          calls.push('options:before-controller-hook');
+          next();
+        });
+      },
+    ],
+    hooks: [
+      {
+        handle: (app) => {
+          app.use((request, response, next) => {
+            void request;
+            void response;
+            calls.push('options:before-controller-phase');
+            next();
+          });
+        },
+        phase: 'beforeControllers',
+      },
+      {
+        handle: (app) => {
+          app.use((request, response, next) => {
+            void request;
+            void response;
+            calls.push('options:after-controller-phase');
+            next();
+          });
+        },
+        phase: 'afterControllers',
+      },
+    ],
+    kernel,
+    postControllerMiddlewares: [
+      (request, response, next) => {
+        void request;
+        void response;
+        calls.push('options:post-controller-middleware');
+        next();
+      },
+    ],
+    preControllerMiddlewares: [
+      (request, response, next) => {
+        void request;
+        void response;
+        calls.push('options:pre-controller-middleware');
+        next();
+      },
+    ],
+    staticHooks: [
+      (app) => {
+        app.use((request, response, next) => {
+          void request;
+          void response;
+          calls.push('options:static-hook');
+          next();
+        });
+      },
+    ],
+    swaggerHooks: [
+      (app) => {
+        app.use((request, response, next) => {
+          void request;
+          void response;
+          calls.push('options:swagger-hook');
+          next();
+        });
+      },
+    ],
+  });
+
+  server
+    .registerControllers(class ExternalController {})
+    .registerPreControllerMiddlewares((request, response, next) => {
+      void request;
+      void response;
+      calls.push('registered:pre-controller-middleware');
+      next();
+    })
+    .registerBeforeControllersHooks((app) => {
+      app.use((request, response, next) => {
+        void request;
+        void response;
+        calls.push('registered:before-controller-hook');
+        next();
+      });
+    })
+    .registerHooks(
+      {
+        handle: (app) => {
+          app.use((request, response, next) => {
+            void request;
+            void response;
+            calls.push('registered:before-controller-phase');
+            next();
+          });
+        },
+        phase: 'beforeControllers',
+      },
+      {
+        handle: (app) => {
+          app.use((request, response, next) => {
+            void request;
+            void response;
+            calls.push('registered:after-controller-phase');
+            next();
+          });
+        },
+        phase: 'afterControllers',
+      },
+      {
+        handle: (app) => {
+          app.get('/order', (request, response) => {
+            void request;
+            calls.push('registered:before-errors-phase');
+            response.status(200).json({ ok: true });
+          });
+        },
+        phase: 'beforeErrors',
+      },
+    )
+    .registerPostControllerMiddlewares((request, response, next) => {
+      void request;
+      void response;
+      calls.push('registered:post-controller-middleware');
+      next();
+    })
+    .registerAfterControllersHooks((app) => {
+      app.use((request, response, next) => {
+        void request;
+        void response;
+        calls.push('registered:after-controller-hook');
+        next();
+      });
+    });
+
+  await server.run();
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/order`,
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(calls, [
+      'options:pre-controller-middleware',
+      'registered:pre-controller-middleware',
+      'options:before-controller-hook',
+      'registered:before-controller-hook',
+      'options:before-controller-phase',
+      'registered:before-controller-phase',
+      'options:post-controller-middleware',
+      'registered:post-controller-middleware',
+      'options:after-controller-hook',
+      'registered:after-controller-hook',
+      'options:after-controller-phase',
+      'registered:after-controller-phase',
+      'options:swagger-hook',
+      'options:static-hook',
+      'registered:before-errors-phase',
+    ]);
+  } finally {
+    await server.close();
+  }
+});
+
+test('uses the default HTTP error handler when none is registered', async () => {
+  const server = new ExpressKernelServer({
+    hooks: [
+      {
+        handle: (app) => {
+          app.get('/default-error', (request, response, next) => {
+            void request;
+            void response;
+            next('plain failure');
+          });
+        },
+        phase: 'beforeControllers',
+      },
+    ],
+    kernel: new Kernel(),
+    port: 0,
+  });
+
+  await server.run();
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/default-error`,
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 500);
+    assert.deepEqual(body, { error: 'plain failure' });
+  } finally {
+    await server.close();
+  }
+});
+
+test('guards server access and close lifecycle', async () => {
+  const server = new ExpressKernelServer({
+    kernel: new Kernel(),
     port: 0,
   });
 
   assert.throws(() => server.app, /HTTP server is not running/);
   assert.throws(() => server.server, /HTTP server is not running/);
-});
-
-test('runs, exposes app and server, then closes', async () => {
-  const middlewareCalls = [];
-  const server = new ExpressKernelServer({
-    errorHandlers: [
-      (error, request, response, next) => {
-        void error;
-        void request;
-        void response;
-        next();
-      },
-    ],
-    kernel: { getRoutes: () => [] },
-    middlewares: [
-      (request, response, next) => {
-        void request;
-        void response;
-        middlewareCalls.push('middleware');
-        next();
-      },
-    ],
-    port: 0,
-    routePrefix: '/api',
-  });
-
   await server.close();
   await server.run();
+  await assert.rejects(() => server.run(), /HTTP server is already running/);
 
-  assert.ok(server.app);
-  assert.ok(server.server.listening);
+  assert.equal(typeof server.app.use, 'function');
 
+  const httpServer = server.server;
+  const close = httpServer.close.bind(httpServer);
+
+  httpServer.close = (callback) => {
+    callback?.(new Error('close failed'));
+
+    return httpServer;
+  };
+
+  await assert.rejects(() => server.close(), /close failed/);
+
+  httpServer.close = close;
   await server.close();
-
   assert.throws(() => server.app, /HTTP server is not running/);
 });
 
-test('default error handler returns JSON 500 responses', () => {
+test('rejects HTTP pipeline registration after the server is running', async () => {
   const server = new ExpressKernelServer({
-    kernel: { getRoutes: () => [] },
-    port: 0,
-  });
-  const responses = [];
-  const response = {
-    json: (body) => responses.push(['json', body]),
-    status: (statusCode) => {
-      responses.push(['status', statusCode]);
-
-      return response;
-    },
-  };
-
-  server.defaultErrorHandler()(new Error('failed'), {}, response);
-  server.defaultErrorHandler()('failed', {}, response);
-
-  assert.deepEqual(responses, [
-    ['status', 500],
-    ['json', { error: 'failed' }],
-    ['status', 500],
-    ['json', { error: 'failed' }],
-  ]);
-});
-
-test('rejects when closing a running server fails', async () => {
-  const error = new Error('close failed');
-  const server = new ExpressKernelServer({
-    kernel: { getRoutes: () => [] },
-    port: 0,
-  });
-
-  server.serverInstance = {
-    close: (callback) => callback(error),
-  };
-
-  await assert.rejects(() => server.close(), error);
-});
-
-test('registers default error handlers and runs without optional middleware', async () => {
-  const app = {
-    handlers: [],
-    use(handler) {
-      this.handlers.push(handler);
-    },
-  };
-  const server = new ExpressKernelServer({
-    kernel: { getRoutes: () => [] },
-  });
-
-  server.registerErrorHandlers(app);
-
-  assert.equal(app.handlers.length, 1);
-
-  await server.run();
-  await server.close();
-});
-
-test('runs configurable controller, swagger and static hooks', async () => {
-  class ExternalController {}
-
-  const calls = [];
-  const middleware = (name) => (request, response, next) => {
-    void request;
-    void response;
-    calls.push(name);
-    next();
-  };
-  const server = new ExpressKernelServer({
-    afterControllersHooks: [(app) => calls.push(['after', Boolean(app)])],
-    beforeControllersHooks: [(app) => calls.push(['before', Boolean(app)])],
-    controllers: [ExternalController],
-    hooks: [
-      {
-        handle: (app) => calls.push(['phase:before', Boolean(app)]),
-        phase: 'beforeControllers',
-      },
-      {
-        handle: (app) => calls.push(['phase:after', Boolean(app)]),
-        phase: 'afterControllers',
-      },
-      {
-        handle: (app) => calls.push(['phase:errors', Boolean(app)]),
-        phase: 'beforeErrors',
-      },
-    ],
-    kernel: { getRoutes: () => [] },
-    middlewares: [middleware('base')],
-    port: 0,
-    postControllerMiddlewares: [middleware('post')],
-    preControllerMiddlewares: [middleware('pre')],
-    staticHooks: [(app) => calls.push(['static', Boolean(app)])],
-    swaggerHooks: [(app) => calls.push(['swagger', Boolean(app)])],
-  });
-
-  await server.run();
-  await server.close();
-
-  assert.deepEqual(calls, [
-    ['before', true],
-    ['phase:before', true],
-    ['after', true],
-    ['phase:after', true],
-    ['swagger', true],
-    ['static', true],
-    ['phase:errors', true],
-  ]);
-});
-
-test('rejects duplicate run calls while server is running', async () => {
-  const server = new ExpressKernelServer({
-    kernel: { getRoutes: () => [] },
+    kernel: new Kernel(),
     port: 0,
   });
 
   await server.run();
 
-  await assert.rejects(() => server.run(), /HTTP server is already running/);
-  await server.close();
+  try {
+    assert.throws(
+      () =>
+        server.registerMiddlewares((request, response, next) => {
+          void request;
+          void response;
+          next();
+        }),
+      /HTTP server is already running/,
+    );
+    assert.throws(
+      () =>
+        server.registerErrorHandlers((error, request, response, next) => {
+          void error;
+          void request;
+          void response;
+          next();
+        }),
+      /HTTP server is already running/,
+    );
+  } finally {
+    await server.close();
+  }
 });

@@ -1,4 +1,7 @@
 import 'reflect-metadata';
+import type { HttpApp } from '@haskou/ddd-kernel/adapters/ui/express';
+import type { ErrorRequestHandler, RequestHandler } from 'express';
+
 import { Kernel } from '@haskou/ddd-kernel';
 import {
   CorrelationConsumerMiddleware,
@@ -37,21 +40,50 @@ kernel.registerConsumerMiddleware(
 );
 kernel.registerRoutes(GetUserByIdRoute);
 
+const requestLoggerMiddleware: RequestHandler = (request, response, next) => {
+  void response;
+  kernel.logger.info(`${request.method} ${request.path}`);
+  next();
+};
+
+const httpErrorHandler: ErrorRequestHandler = (
+  error,
+  request,
+  response,
+  next,
+) => {
+  void request;
+
+  if (response.headersSent) {
+    next(error);
+
+    return;
+  }
+
+  kernel.logger.error(error instanceof Error ? error.message : String(error));
+  response.status(500).json({
+    error: 'InternalServerError',
+    message: error instanceof Error ? error.message : 'Unexpected error',
+  });
+};
+
 const server = new ExpressKernelServer({
-  hooks: [
-    {
-      handle: (app) => {
-        app.get('/health', (request, response) => {
-          void request;
-          response.status(200).json({ status: 'ok' });
-        });
-      },
-      phase: 'beforeErrors',
-    },
-  ],
   kernel,
   port: Number(process.env.PORT ?? 3000),
 });
+
+server
+  .registerMiddlewares(requestLoggerMiddleware)
+  .registerHooks({
+    handle: (app: HttpApp) => {
+      app.get('/health', (request, response) => {
+        void request;
+        response.status(200).json({ status: 'ok' });
+      });
+    },
+    phase: 'beforeErrors',
+  })
+  .registerErrorHandlers(httpErrorHandler);
 
 kernel.registerShutdownHook(() => server.close());
 
