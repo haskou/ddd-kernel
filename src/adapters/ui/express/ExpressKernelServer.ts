@@ -1,6 +1,8 @@
-import type { ErrorRequestHandler } from 'express';
-
-import { createExpressServer } from 'routing-controllers';
+import express, {
+  type ErrorRequestHandler,
+  type RequestHandler,
+} from 'express';
+import { useExpressServer } from 'routing-controllers';
 
 import type { ExpressKernelServerOptions } from './ExpressKernelServerOptions.js';
 import type { HttpApp } from './HttpApp.js';
@@ -28,6 +30,24 @@ export class ExpressKernelServer {
         error: error instanceof Error ? error.message : String(error),
       });
     };
+  }
+
+  private async runHooks(
+    hooks: readonly ((app: HttpApp) => Promise<void> | void)[] | undefined,
+    app: HttpApp,
+  ): Promise<void> {
+    for (const hook of hooks ?? []) {
+      await hook(app);
+    }
+  }
+
+  private registerMiddlewares(
+    app: HttpApp,
+    middlewares: readonly RequestHandler[] | undefined,
+  ): void {
+    for (const middleware of middlewares ?? []) {
+      app.use(middleware);
+    }
   }
 
   public get app(): HttpApp {
@@ -66,15 +86,24 @@ export class ExpressKernelServer {
     });
   }
 
-  public run(): Promise<void> {
-    const app = createExpressServer({
-      controllers: this.options.kernel.getRoutes(),
-      routePrefix: this.options.routePrefix,
-    }) as HttpApp;
+  public async run(): Promise<void> {
+    const controllers = [
+      ...this.options.kernel.getRoutes(),
+      ...(this.options.controllers ?? []),
+    ];
+    const app = express() as HttpApp;
 
-    for (const middleware of this.options.middlewares ?? []) {
-      app.use(middleware);
-    }
+    this.registerMiddlewares(app, this.options.middlewares);
+    this.registerMiddlewares(app, this.options.preControllerMiddlewares);
+    await this.runHooks(this.options.beforeControllersHooks, app);
+    useExpressServer(app, {
+      controllers,
+      routePrefix: this.options.routePrefix,
+    });
+    this.registerMiddlewares(app, this.options.postControllerMiddlewares);
+    await this.runHooks(this.options.afterControllersHooks, app);
+    await this.runHooks(this.options.swaggerHooks, app);
+    await this.runHooks(this.options.staticHooks, app);
 
     this.registerErrorHandlers(app);
     this.appInstance = app;

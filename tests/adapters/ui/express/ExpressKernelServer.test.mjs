@@ -106,3 +106,37 @@ test('registers default error handlers and runs without optional middleware', as
   await server.run();
   await server.close();
 });
+
+test('runs configurable controller, swagger and static hooks', async () => {
+  class ExternalController {}
+
+  const calls = [];
+  const middleware = (name) => (request, response, next) => {
+    void request;
+    void response;
+    calls.push(name);
+    next();
+  };
+  const server = new ExpressKernelServer({
+    afterControllersHooks: [(app) => calls.push(['after', Boolean(app)])],
+    beforeControllersHooks: [(app) => calls.push(['before', Boolean(app)])],
+    controllers: [ExternalController],
+    kernel: { getRoutes: () => [] },
+    middlewares: [middleware('base')],
+    port: 0,
+    postControllerMiddlewares: [middleware('post')],
+    preControllerMiddlewares: [middleware('pre')],
+    staticHooks: [(app) => calls.push(['static', Boolean(app)])],
+    swaggerHooks: [(app) => calls.push(['swagger', Boolean(app)])],
+  });
+
+  await server.run();
+  await server.close();
+
+  assert.deepEqual(calls, [
+    ['before', true],
+    ['after', true],
+    ['swagger', true],
+    ['static', true],
+  ]);
+});
