@@ -76,12 +76,21 @@ kernel.registerShutdownHook(() => server.close());
 ```
 
 Class registration resolves through `Kernel.di`. Instance registration is
-available when a runtime object is already built:
+available for consumers and schedulers:
 
 ```ts
 kernel.registerConsumerInstances(consumer);
 kernel.registerSchedulerInstances(scheduler);
-kernel.registerRuntime(server);
+```
+
+Runtimes and initializers are passed to their run methods as classes. Runtimes
+are resolved through DI, executed and automatically added to shutdown hooks.
+When an object is already built outside the kernel, register the shutdown action
+explicitly:
+
+```ts
+await kernel.runRuntimes(HttpRuntime);
+kernel.registerShutdownHook(() => server.close());
 ```
 
 ## Running And Shutdown
