@@ -131,7 +131,6 @@ export default defineConfig({
 
     nav: [
       { text: 'Guide', link: '/getting-started/introduction' },
-      { text: 'Package Map', link: '/getting-started/package-map' },
       { text: 'Reference', link: '/reference/' },
     ],
 
