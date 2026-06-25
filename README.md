@@ -1,142 +1,76 @@
+# @haskou/ddd-kernel
 
 [![CI](https://github.com/haskou/ddd-kernel/actions/workflows/ci.yml/badge.svg)](https://github.com/haskou/ddd-kernel/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/haskou/ddd-kernel/branch/main/graph/badge.svg)](https://codecov.io/gh/haskou/ddd-kernel)
 [![npm](https://img.shields.io/npm/v/@haskou/ddd-kernel.svg)](https://www.npmjs.com/package/@haskou/ddd-kernel)
 [![license](https://img.shields.io/npm/l/@haskou/ddd-kernel.svg)](LICENSE)
 
-## Status
-
-This package is currently in early 0.x development. It is used to extract reusable DDD infrastructure from real TypeScript services, but public APIs may still change while the kernel is being hardened.
-
-# @haskou/ddd-kernel
-
 Framework-agnostic DDD kernel for TypeScript applications and microservices.
 
-The expected startup pattern mirrors `pigeon-swarm-node`: application classes
-are exported as `default`, `node-dependency-injection` generates or loads
-`services.yaml`, and the kernel resolves consumers, schedulers, initializers and
-runtimes through the configured container. Constructor injection is the normal
-path for application services; `Kernel.di` and `this.get()` exist for framework
-boundaries and backwards compatibility.
+`@haskou/ddd-kernel` provides the runtime foundation shared by services that
+are built around aggregates, domain events, consumers, schedulers and explicit
+composition roots. The package keeps application bootstrapping consistent while
+leaving transport, persistence and logging choices behind replaceable adapters.
 
-```ts
-import { applicationConsumers } from './apps/ApplicationConsumers.js';
-import { applicationInitializers } from './apps/ApplicationInitializers.js';
-import { applicationRuntimes } from './apps/ApplicationRuntimes.js';
-import { recurringSchedulers } from './apps/ApplicationSchedulers.js';
-import { Kernel } from '@haskou/ddd-kernel';
+## Scope
 
-const kernel = new Kernel();
+The core package is responsible for application lifecycle and dependency
+composition. It includes contracts and primitives for:
 
-await kernel.dependencyInjection();
+- dependency injection and service resolution
+- startup and graceful shutdown hooks
+- consumers and consumer middleware
+- schedulers and scheduler error policies
+- runtimes
+- domain events and aggregate roots
+- repositories and pub/sub contracts
+- logging contracts
 
-kernel.registerConsumers(...applicationConsumers);
-await kernel.runInitializers(...applicationInitializers);
-await kernel.runConsumers();
+The kernel does not own HTTP, AMQP, MongoDB, WebSocket or logger implementation
+details. Those integrations are exposed as optional adapters, so applications
+only depend on the infrastructure they actually use.
 
-kernel.registerSchedulers(...recurringSchedulers);
-await kernel.runSchedulers();
+## Architecture
 
-await kernel.runRuntimes(...applicationRuntimes);
-```
+The package separates stable contracts from concrete infrastructure:
 
-Normal application code should not register factories manually. Application
-services, repositories, adapters, schedulers, runtimes and consumers should be
-default-exported classes so the autowire flow can resolve them.
+- `@haskou/ddd-kernel` contains the kernel, lifecycle, DI integration and domain
+  primitives.
+- `@haskou/ddd-kernel/adapters/*` contains optional adapter entrypoints.
+- Applications register their own consumers, schedulers, runtimes and adapters
+  at the composition root.
 
-## Imports
+Constructor injection is the preferred application pattern. Direct service
+lookup remains available for compatibility and integration boundaries, but it is
+not the primary dependency model.
 
-```ts
-import { Kernel } from '@haskou/ddd-kernel';
-import { DependencyInjection } from '@haskou/ddd-kernel/dependency-injection';
-import { AggregateRoot, DomainEvent } from '@haskou/ddd-kernel/domain';
-import { Scheduler } from '@haskou/ddd-kernel/scheduler';
-```
+## Stability
 
-Optional adapters:
-
-```ts
-import { InMemoryRepository } from '@haskou/ddd-kernel/adapters/db/in-memory';
-import { MongoRepository } from '@haskou/ddd-kernel/adapters/db/mongo';
-import { InMemoryPubSub } from '@haskou/ddd-kernel/adapters/pubsub/in-memory';
-import { ExpressKernelServer } from '@haskou/ddd-kernel/adapters/ui/express';
-```
-
-Contracts:
-
-```ts
-import type { Repository, UnitOfWork } from '@haskou/ddd-kernel/contracts/db';
-import type { Consumer, PubSub } from '@haskou/ddd-kernel/contracts/pubsub';
-```
-
-UI helpers:
-
-```ts
-import Route from '@haskou/ddd-kernel/adapters/ui/routes';
-import { HttpRouteStatusEnum } from '@haskou/ddd-kernel/contracts/ui';
-```
-
-## Dependency Injection
-
-Default setup:
-
-```ts
-const kernel = new Kernel();
-await kernel.dependencyInjection();
-```
-
-This uses:
-
-- `src` as the source directory.
-- `config/container/services.yaml` as the generated or loaded container file.
-- `CONTAINER_BUILD=true` to regenerate the YAML through autowire.
-
-Override paths when needed:
-
-```ts
-const kernel = new Kernel({
-  servicesYamlPath: 'config/container/services.yaml',
-  sourceDirectory: 'src',
-});
-```
-
-Prefer constructor injection for consumers, schedulers, routes, repositories and
-application services:
-
-```ts
-export default class RegisterUserWhenCreated {
-  constructor(private readonly finder: UserByIdFinder) {}
-}
-```
-
-Use `Kernel.di.getService(...)` only at the composition boundary or in legacy
-code that still extends a base class exposing `this.get()`.
-
-## Example
-
-See `example/` for a small route/application/domain setup that imports the
-package through `file:..`.
-
-```bash
-cd example
-yarn install
-yarn typecheck
-yarn build
-```
+This project is still in the `0.x` line. The current API is intentionally small
+and covered by tests, but breaking changes may still happen while the kernel is
+being extracted and hardened from production service patterns.
 
 ## Documentation
 
-Full documentation is available at **https://haskou.github.io/ddd-kernel/**
+Usage guides, adapter authoring notes and API reference pages are published at:
 
-The documentation includes installation, quick start, examples, error handling, serialization notes, and one reference page per exported class.
+https://haskou.github.io/ddd-kernel/
 
-## Scripts
+The README is intentionally limited to project orientation. Installation,
+startup, DI, AMQP, routes and adapter examples live in the documentation site.
 
-```bash
-yarn lint
-yarn typecheck
-yarn build
-```
+## Release Branches
+
+CI publishes npm versions from pull requests merged into the default branch
+according to the source branch prefix:
+
+| Branch prefix | npm version bump |
+| --- | --- |
+| `fix/*` | Patch |
+| `feat/*` | Minor |
+| `break/*` | Major |
+
+Other branch names run validation only and do not publish.
 
 ## License
 
