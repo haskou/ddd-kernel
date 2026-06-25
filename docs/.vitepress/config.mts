@@ -78,7 +78,7 @@ const referenceSidebar = [
   },
 ];
 
-const guideSidebar = [
+const gettingStartedSidebar = [
   {
     text: 'Getting started',
     items: [
@@ -91,6 +91,9 @@ const guideSidebar = [
       },
     ],
   },
+];
+
+const guideSidebar = [
   {
     text: 'Guides',
     items: [
@@ -130,12 +133,13 @@ export default defineConfig({
     siteTitle: 'DDD Kernel',
 
     nav: [
-      { text: 'Guide', link: '/getting-started/introduction' },
+      { text: 'Getting Started', link: '/getting-started/introduction' },
+      { text: 'Guide', link: '/guides/dependency-injection' },
       { text: 'Reference', link: '/reference/' },
     ],
 
     sidebar: {
-      '/getting-started/': guideSidebar,
+      '/getting-started/': gettingStartedSidebar,
       '/guides/': guideSidebar,
       '/reference/': referenceSidebar,
     },
