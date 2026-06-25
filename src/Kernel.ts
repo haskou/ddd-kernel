@@ -192,6 +192,7 @@ export class Kernel {
   public async dependencyInjection(
     options: KernelDependencyInjectionOptions = {},
   ): Promise<void> {
+    Kernel.state.activeKernel = this;
     this.dependencyInjectionInstance =
       this.dependencyInjectionInstance ??
       DependencyInjection.configure(
@@ -199,6 +200,7 @@ export class Kernel {
       );
 
     await this.dependencyInjectionInstance.compile();
+    Kernel.state.activeKernel = this;
   }
 
   public getRoutes(): ServiceClass<Route>[] {

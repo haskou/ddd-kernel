@@ -5,6 +5,8 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 
+import { Reference } from 'node-dependency-injection';
+
 import { DependencyInjection } from '../dist/infrastructure/dependency-injection/index.js';
 
 class ContractRepository {}
@@ -243,6 +245,39 @@ test('registers override classes that are not already in the container', async (
   );
 });
 
+test('overrides unresolved argument references generated for external package imports', async () => {
+  class ExternalRepository {}
+
+  class ServiceThatNeedsExternalRepository {}
+
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: ExternalRepository,
+        useClass: InMemoryRepository,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+  const serviceId = serviceIdFor(ServiceThatNeedsExternalRepository);
+  const externalReferenceId = Buffer.from(
+    'src__application____vendor__package__ExternalRepository',
+  ).toString('base64');
+
+  dependencyInjection.container
+    .register(serviceId, ServiceThatNeedsExternalRepository)
+    .addArgument(new Reference(externalReferenceId));
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.ok(
+    dependencyInjection.getService(externalReferenceId) instanceof
+      InMemoryRepository,
+  );
+});
+
 test('generates services.yaml', async () => {
   const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
   const sourceDirectory = temporaryDirectory;
@@ -390,4 +425,23 @@ test('falls back to literal container ids when service name is not a class', asy
   assert.ok(
     dependencyInjection.getService(ParentService) instanceof LiteralService,
   );
+});
+
+test('ignores non-reference definition arguments while searching override references', () => {
+  const dependencyInjection = new DependencyInjection();
+
+  assert.deepEqual(
+    dependencyInjection.getDefinitionArgumentReferences({
+      _args: [null, {}, { id: 123 }, { id: 'service-id' }],
+    }),
+    ['service-id'],
+  );
+  assert.equal(
+    dependencyInjection.serviceIdReferencesService(
+      serviceIdFor(ConcreteRepository),
+      'ConcreteRepository',
+    ),
+    true,
+  );
+  assert.deepEqual(dependencyInjection.findReferencedServiceIds('literal'), []);
 });

@@ -107,6 +107,42 @@ export class DependencyInjection implements ServiceResolver {
     return serviceName.endsWith(`__${serviceClassName}__${serviceClassName}`);
   }
 
+  private serviceIdReferencesService(
+    serviceId: string,
+    serviceClassName: string,
+  ): boolean {
+    const serviceName = Buffer.from(serviceId, 'base64').toString('utf8');
+
+    return serviceName.endsWith(`__${serviceClassName}`);
+  }
+
+  private getReferenceId(value: unknown): string | undefined {
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      'id' in value &&
+      typeof value.id === 'string'
+    ) {
+      return value.id;
+    }
+
+    return undefined;
+  }
+
+  private getDefinitionArgumentReferences(
+    definition: DefinitionMetadata,
+  ): string[] {
+    return [
+      ...(definition._args ?? []),
+      ...(definition._appendArgs ?? []),
+      ...(definition._overrideArgs ?? []),
+    ].flatMap((argument) => {
+      const referenceId = this.getReferenceId(argument);
+
+      return referenceId ? [referenceId] : [];
+    });
+  }
+
   private findConcreteChildServiceId(serviceName: unknown): string | undefined {
     const serviceClassName = this.getServiceClassName(serviceName);
 
@@ -152,24 +188,43 @@ export class DependencyInjection implements ServiceResolver {
     return matches[matches.length - 1];
   }
 
-  private getOverrideTokenId(token: unknown): string {
-    const registeredServiceId = this.findRegisteredServiceId(token);
+  private findReferencedServiceIds(serviceName: unknown): string[] {
+    const serviceClassName = this.getServiceClassName(serviceName);
 
-    if (registeredServiceId) {
-      return registeredServiceId;
+    if (!serviceClassName) {
+      return [];
     }
 
-    const aliasServiceId = this.findAliasServiceId(token);
+    return [
+      ...new Set(
+        [...this.definitions.values()]
+          .flatMap((definition) =>
+            this.getDefinitionArgumentReferences(definition),
+          )
+          .filter((id) =>
+            this.serviceIdReferencesService(id, serviceClassName),
+          ),
+      ),
+    ];
+  }
 
-    if (aliasServiceId) {
-      return aliasServiceId;
+  private getOverrideTokenIds(token: unknown): string[] {
+    const tokenIds = [
+      this.findRegisteredServiceId(token),
+      this.findAliasServiceId(token),
+      ...this.findReferencedServiceIds(token),
+    ].filter((id): id is string => id !== undefined);
+    const existingTokenIds = [...new Set(tokenIds)];
+
+    if (existingTokenIds.length > 0) {
+      return existingTokenIds;
     }
 
     const overrideTokenId = this.getOverrideId('token', token);
 
     this.ensureSyntheticService(overrideTokenId, undefined);
 
-    return overrideTokenId;
+    return [overrideTokenId];
   }
 
   private getOverrideClassServiceId(
@@ -193,11 +248,13 @@ export class DependencyInjection implements ServiceResolver {
       return;
     }
 
-    const tokenId = this.getOverrideTokenId(override.token);
+    const tokenIds = this.getOverrideTokenIds(override.token);
     const classId = this.getOverrideClassServiceId(override.useClass);
 
-    this.overrideTokenIds.set(override.token, tokenId);
-    this.container.setAlias(tokenId, classId);
+    this.overrideTokenIds.set(override.token, tokenIds[0]);
+    for (const tokenId of tokenIds) {
+      this.container.setAlias(tokenId, classId);
+    }
   }
 
   private applyFactoryOverride(override: DependencyOverride): void {
@@ -205,12 +262,14 @@ export class DependencyInjection implements ServiceResolver {
       return;
     }
 
-    const tokenId = this.getOverrideTokenId(override.token);
+    const tokenIds = this.getOverrideTokenIds(override.token);
     const factoryId = this.getOverrideId('factory', override.token);
 
     this.ensureSyntheticService(factoryId, override.useFactory(this));
-    this.overrideTokenIds.set(override.token, tokenId);
-    this.container.setAlias(tokenId, factoryId);
+    this.overrideTokenIds.set(override.token, tokenIds[0]);
+    for (const tokenId of tokenIds) {
+      this.container.setAlias(tokenId, factoryId);
+    }
   }
 
   private applyValueOverride(override: DependencyOverride): void {
@@ -218,12 +277,14 @@ export class DependencyInjection implements ServiceResolver {
       return;
     }
 
-    const tokenId = this.getOverrideTokenId(override.token);
+    const tokenIds = this.getOverrideTokenIds(override.token);
     const valueId = this.getOverrideId('value', override.token);
 
     this.ensureSyntheticService(valueId, override.useValue);
-    this.overrideTokenIds.set(override.token, tokenId);
-    this.container.setAlias(tokenId, valueId);
+    this.overrideTokenIds.set(override.token, tokenIds[0]);
+    for (const tokenId of tokenIds) {
+      this.container.setAlias(tokenId, valueId);
+    }
   }
 
   private applyOverrides(): void {

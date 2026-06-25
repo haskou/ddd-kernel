@@ -161,6 +161,25 @@ test('throws when DI is accessed before initialization', () => {
   );
 });
 
+test('keeps the instance kernel active after dependency injection', async () => {
+  const calls = [];
+  const kernel = new Kernel({
+    di: {
+      compile: async () => {
+        calls.push('compile');
+        new Kernel();
+      },
+      getService: () => undefined,
+    },
+  });
+
+  await kernel.dependencyInjection();
+
+  assert.deepEqual(calls, ['compile']);
+  assert.equal(Kernel.active, kernel);
+  assert.equal(Kernel.di, kernel.di);
+});
+
 test('configures dependency injection from kernel options', async () => {
   const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
   const sourceDirectory = path.join(temporaryDirectory, 'src');

@@ -71,3 +71,31 @@ await kernel.dependencyInjection({
 Prefer constructor injection in services, consumers, schedulers and routes. The
 override belongs at application bootstrap or test setup, not inside the class
 that needs the dependency.
+
+## External Package Contracts
+
+`node-dependency-injection` can encode constructor dependencies imported from
+external packages as unresolved service references. For example, a dependency
+imported from `@haskou/ddd-kernel/domain` can appear in generated container
+metadata as if it were a local path under the application source tree.
+
+Overrides also cover those unresolved references. If an argument reference ends
+with the overridden token class name, the container aliases that reference to
+the configured override implementation:
+
+```ts
+import { DomainEventPublisher } from '@haskou/ddd-kernel/domain';
+import MessageBus from '@haskou/ddd-kernel/adapters/pubsub/amqp';
+
+await kernel.dependencyInjection({
+  overrides: [
+    {
+      token: DomainEventPublisher,
+      useClass: MessageBus,
+    },
+  ],
+});
+```
+
+This avoids local bridge contracts or hand-written aliases when applications
+inject contracts exported by this package.
