@@ -61,6 +61,10 @@ export class Kernel {
     return Kernel.getActiveKernel().logger;
   }
 
+  public static get active(): Kernel {
+    return Kernel.getActiveKernel();
+  }
+
   public static get rootDirectory(): string {
     return process.cwd();
   }

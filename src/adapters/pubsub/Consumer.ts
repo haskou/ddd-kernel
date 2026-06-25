@@ -1,27 +1,28 @@
-import type { ConsumerMiddleware } from '../../contracts/index.js';
 import type { DomainEventConsumer } from '../../domain/DomainEventConsumer.js';
 import type { DomainEvent } from '../../domain/index.js';
 
 import { Kernel } from '../../Kernel.js';
+import { ConsumerMiddlewarePipeline } from './ConsumerMiddlewarePipeline.js';
 
 export abstract class Consumer {
   constructor(private readonly consumer: DomainEventConsumer) {}
 
-  private async runMiddleware(
-    event: DomainEvent,
-    middlewares: readonly ConsumerMiddleware[],
-    index: number,
-  ): Promise<void> {
-    const middleware = middlewares[index];
+  private async runMiddleware(event: DomainEvent): Promise<void> {
+    const pipeline = new ConsumerMiddlewarePipeline(Kernel.consumerMiddleware);
 
-    if (!middleware) {
-      await this.handler(event);
-
-      return;
-    }
-
-    await middleware.handle(event, () =>
-      this.runMiddleware(event, middlewares, index + 1),
+    await pipeline.execute(
+      event,
+      {
+        causationId: event.getCausationId(),
+        correlationId: event.getCorrelationId(),
+        eventId: event.eventId,
+        eventName: this.eventName,
+        exchange: this.exchange,
+        kernel: Kernel.active,
+        metadata: {},
+        queueName: this.queueName,
+      },
+      () => this.handler(event),
     );
   }
 
@@ -41,7 +42,7 @@ export abstract class Consumer {
       this.eventName,
       this.domainEvent,
       this.exchange,
-      (event) => this.runMiddleware(event, Kernel.consumerMiddleware, 0),
+      (event) => this.runMiddleware(event),
     );
   }
 
