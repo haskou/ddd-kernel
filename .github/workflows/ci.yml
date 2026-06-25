@@ -43,7 +43,7 @@ jobs:
         run: yarn typecheck
 
       - name: Run tests with coverage
-        run: yarn build && yarn c8 --all --src src --include "src/**/*.ts" --extension .ts --exclude-after-remap --reporter text --reporter lcov --check-coverage=false node --test "tests/**/*.test.mjs"
+        run: yarn test:coverage
 
       - name: Build docs
         run: yarn docs:build

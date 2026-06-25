@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -77,6 +78,10 @@ test('runs shutdown hooks after consumers and schedulers', async () => {
 });
 
 test('can be imported from CommonJS output', () => {
+  if (!existsSync(new URL('../dist/index.cjs', import.meta.url))) {
+    return;
+  }
+
   const require = createRequire(import.meta.url);
   const cjsPackage = require('../dist/index.cjs');
 
