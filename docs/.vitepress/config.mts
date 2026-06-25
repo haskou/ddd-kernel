@@ -136,6 +136,10 @@ export default defineConfig({
       { text: 'Getting Started', link: '/getting-started/introduction' },
       { text: 'Guide', link: '/guides/dependency-injection' },
       { text: 'Reference', link: '/reference/' },
+      {
+        text: 'npm',
+        link: 'https://www.npmjs.com/package/@haskou/ddd-kernel',
+      },
     ],
 
     sidebar: {
