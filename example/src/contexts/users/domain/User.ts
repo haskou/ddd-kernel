@@ -1,8 +1,8 @@
 import { AggregateRoot } from '@haskou/ddd-kernel/domain';
 
-import { UserId } from './value-objects/UserId.js';
+import UserId from './value-objects/UserId.js';
 
-export class User extends AggregateRoot {
+export default class User extends AggregateRoot {
   constructor(private readonly id: UserId) {
     super();
   }

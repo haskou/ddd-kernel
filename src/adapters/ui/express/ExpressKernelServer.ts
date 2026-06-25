@@ -2,8 +2,9 @@ import express, {
   type ErrorRequestHandler,
   type RequestHandler,
 } from 'express';
-import { useExpressServer } from 'routing-controllers';
+import { useContainer, useExpressServer } from 'routing-controllers';
 
+import type { ExpressController } from './ExpressController.js';
 import type { ExpressKernelServerOptions } from './ExpressKernelServerOptions.js';
 import type { HttpApp } from './HttpApp.js';
 import type { HttpServer } from './HttpServer.js';
@@ -13,6 +14,19 @@ export class ExpressKernelServer {
   private serverInstance: HttpServer | undefined;
 
   constructor(private readonly options: ExpressKernelServerOptions) {}
+
+  private configureControllerContainer(): void {
+    useContainer(
+      {
+        get: (ClassDefinition: ExpressController) =>
+          this.options.kernel.di.getService(ClassDefinition),
+      },
+      {
+        fallback: true,
+        fallbackOnErrors: true,
+      },
+    );
+  }
 
   private registerErrorHandlers(app: HttpApp): void {
     const handlers = this.options.errorHandlers ?? [this.defaultErrorHandler()];
@@ -112,6 +126,7 @@ export class ExpressKernelServer {
     this.registerMiddlewares(app, this.options.preControllerMiddlewares);
     await this.runHooks(this.options.beforeControllersHooks, app);
     await this.runPhaseHooks('beforeControllers', app);
+    this.configureControllerContainer();
     useExpressServer(app, {
       controllers,
       routePrefix: this.options.routePrefix,
