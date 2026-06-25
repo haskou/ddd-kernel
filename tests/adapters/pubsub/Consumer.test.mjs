@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   Consumer,
+  ConsumerMiddlewarePipeline,
   CorrelationConsumerMiddleware,
   IdempotencyConsumerMiddleware,
   InMemoryIdempotencyStore,
@@ -235,4 +236,139 @@ test('releases claimed idempotency keys when handlers fail', async () => {
   await middleware.handle(event, async () => {}, context);
 
   assert.equal(await store.has('event-id'), true);
+});
+
+test('supports legacy idempotency stores without atomic claim', async () => {
+  const event = new TestDomainEvent('aggregate-id');
+  const context = {
+    eventId: 'event-id',
+    eventName: 'test.domain-event',
+    exchange: 'exchange',
+    kernel: new Kernel(),
+    metadata: {},
+    queueName: 'queue',
+  };
+  const handledKeys = new Set();
+  const calls = [];
+  const middleware = new IdempotencyConsumerMiddleware({
+    store: {
+      has: (key) => handledKeys.has(key),
+      mark: (key) => handledKeys.add(key),
+    },
+  });
+
+  await middleware.handle(event, async () => calls.push('first'), context);
+  await middleware.handle(event, async () => calls.push('second'), context);
+
+  assert.deepEqual(calls, ['first']);
+});
+
+test('allows retry middleware with zero attempts', async () => {
+  const event = new TestDomainEvent('aggregate-id');
+  const context = {
+    eventId: event.eventId,
+    eventName: 'test.domain-event',
+    exchange: 'exchange',
+    kernel: new Kernel(),
+    metadata: {},
+    queueName: 'queue',
+  };
+  let calls = 0;
+
+  await new RetryConsumerMiddleware({ maxAttempts: 0 }).handle(
+    event,
+    async () => {
+      calls++;
+    },
+    context,
+  );
+
+  assert.equal(calls, 0);
+});
+
+test('executes consumer middleware pipeline without middleware', async () => {
+  const event = new TestDomainEvent('aggregate-id');
+  const calls = [];
+  const pipeline = new ConsumerMiddlewarePipeline([]);
+
+  await pipeline.execute(
+    event,
+    {
+      eventId: event.eventId,
+      eventName: 'test.domain-event',
+      exchange: 'exchange',
+      kernel: new Kernel(),
+      metadata: {},
+      queueName: 'queue',
+    },
+    async () => calls.push(['handler', event]),
+  );
+
+  assert.deepEqual(calls, [['handler', event]]);
+});
+
+test('waits between retry attempts when delay is configured', async () => {
+  const event = new TestDomainEvent('aggregate-id');
+  const context = {
+    eventId: event.eventId,
+    eventName: 'test.domain-event',
+    exchange: 'exchange',
+    kernel: new Kernel(),
+    metadata: {},
+    queueName: 'queue',
+  };
+  let attempts = 0;
+
+  await new RetryConsumerMiddleware({
+    delay: 1,
+    maxAttempts: 2,
+  }).handle(
+    event,
+    async () => {
+      attempts++;
+
+      if (attempts === 1) {
+        throw new Error('transient');
+      }
+    },
+    context,
+  );
+
+  assert.equal(attempts, 2);
+});
+
+test('resolves retry delay from a function', async () => {
+  const event = new TestDomainEvent('aggregate-id');
+  const context = {
+    eventId: event.eventId,
+    eventName: 'test.domain-event',
+    exchange: 'exchange',
+    kernel: new Kernel(),
+    metadata: {},
+    queueName: 'queue',
+  };
+  const delays = [];
+  let attempts = 0;
+
+  await new RetryConsumerMiddleware({
+    delay: (attempt, error, receivedContext) => {
+      delays.push([attempt, String(error), receivedContext.eventName]);
+
+      return 1;
+    },
+    maxAttempts: 2,
+  }).handle(
+    event,
+    async () => {
+      attempts++;
+
+      if (attempts === 1) {
+        throw new Error('transient');
+      }
+    },
+    context,
+  );
+
+  assert.equal(attempts, 2);
+  assert.deepEqual(delays, [[1, 'Error: transient', 'test.domain-event']]);
 });

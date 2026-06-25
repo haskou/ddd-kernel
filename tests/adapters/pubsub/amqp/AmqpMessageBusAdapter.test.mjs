@@ -216,6 +216,39 @@ test('consumes AMQP messages and acknowledges handled events', async () => {
   assert.deepEqual(channel.calls.at(-1), ['ack', message]);
 });
 
+test('consumes AMQP messages without headers metadata', async () => {
+  const channel = new FakeChannel();
+  const handled = [];
+  const { default: AmqpMessageBusAdapter } =
+    await import('../../../../dist/adapters/pubsub/amqp/index.js');
+  const adapter = new AmqpMessageBusAdapter({
+    dsn: 'amqp://localhost',
+    exchange: 'domain',
+  });
+  const message = {
+    content: Buffer.from(JSON.stringify(createMessage())),
+    properties: {},
+  };
+
+  await withAmqpConnect(channel, async () => {
+    await adapter.consume(
+      'queue',
+      'test.domain-event',
+      TestDomainEvent,
+      'domain',
+      async (event, context) => {
+        void event;
+        handled.push(context);
+      },
+    );
+
+    await channel.consumers[0](message);
+  });
+
+  assert.deepEqual(handled[0].metadata.headers, {});
+  assert.equal(handled[0].metadata.retries, 0);
+});
+
 test('retries failed messages and registers delayed consumers once', async () => {
   const channel = new FakeChannel();
   const logs = [];
