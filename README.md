@@ -44,12 +44,6 @@ Constructor injection is the preferred application pattern. Direct service
 lookup remains available for compatibility and integration boundaries, but it is
 not the primary dependency model.
 
-## Stability
-
-This project is still in the `0.x` line. The current API is intentionally small
-and covered by tests, but breaking changes may still happen while the kernel is
-being extracted and hardened from production service patterns.
-
 ## Documentation
 
 Usage guides, adapter authoring notes and API reference pages are published at:
