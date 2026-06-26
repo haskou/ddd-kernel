@@ -109,12 +109,14 @@ export class Kernel {
   }
 
   public static loadEnvironmentVariables(
-    environment = process.env.NODE_ENV || 'local',
+    environment?: string,
     options: KernelEnvironmentVariablesOptions = {},
   ): DotenvConfigOutput {
+    const environmentName = environment ?? process.env.NODE_ENV ?? 'local';
+
     return dotenv.config({
       override: options.override,
-      path: Kernel.getEnvironmentVariablesPath(environment, options),
+      path: Kernel.getEnvironmentVariablesPath(environmentName, options),
     });
   }
 
@@ -235,7 +237,7 @@ export class Kernel {
   }
 
   public loadEnvironmentVariables(
-    environment = process.env.NODE_ENV || 'local',
+    environment?: string,
     options: KernelEnvironmentVariablesOptions = {},
   ): DotenvConfigOutput {
     return Kernel.loadEnvironmentVariables(environment, options);
