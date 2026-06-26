@@ -79,17 +79,28 @@ kernel-owned access point:
 const port = Number(Kernel.environment.HTTP_PORT ?? 3000);
 ```
 
-Applications can type known variables by augmenting `NodeJS.ProcessEnv`:
+For typed access and runtime validation, pass an environment schema when
+creating the kernel:
 
 ```ts
-declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      HTTP_PORT?: string;
-    }
-  }
-}
+const environmentSchema = {
+  ENABLE_JOBS: { defaultValue: false, type: 'boolean' },
+  HTTP_PORT: { required: true, type: 'number' },
+  SERVICE_NAME: { type: 'string' },
+} as const;
+
+const kernel = new Kernel({ environmentSchema });
+
+kernel.loadEnvironmentVariables();
+
+kernel.environment.HTTP_PORT; // number
+kernel.environment.ENABLE_JOBS; // boolean
+kernel.environment.SERVICE_NAME; // string | undefined
 ```
+
+Required variables throw `KernelEnvironmentValidationError` when they are
+missing. `number` and `boolean` values are parsed after `.env` files are loaded.
+Boolean values accept `true`, `false`, `1`, `0`, `yes`, `no`, `on` and `off`.
 
 ## Dependency Injection
 

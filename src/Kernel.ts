@@ -12,18 +12,33 @@ import type { ServiceClass } from './infrastructure/dependency-injection/index.j
 import type { Initializer, Runtime } from './infrastructure/lifecycle/index.js';
 import type { Scheduler } from './infrastructure/scheduler/index.js';
 import type { KernelDependencyInjectionOptions } from './kernel/KernelDependencyInjectionOptions.js';
+import type { KernelEnvironmentForSchema } from './kernel/KernelEnvironmentForSchema.js';
+import type { KernelEnvironmentSchema } from './kernel/KernelEnvironmentSchema.js';
+import type { KernelEnvironmentValue } from './kernel/KernelEnvironmentValue.js';
 import type { KernelEnvironmentVariablesOptions } from './kernel/KernelEnvironmentVariablesOptions.js';
 import type { KernelOptions } from './kernel/KernelOptions.js';
 import type { ShutdownCandidate } from './kernel/ShutdownCandidate.js';
 
 import { ConsoleKernelLogger } from './adapters/kernel/index.js';
 import { DependencyInjection } from './infrastructure/dependency-injection/index.js';
+import { KernelEnvironmentValidationError } from './kernel/KernelEnvironmentValidationError.js';
 
 export type { KernelDependencyInjectionOptions } from './kernel/KernelDependencyInjectionOptions.js';
+export type { KernelDefaultEnvironment } from './kernel/KernelDefaultEnvironment.js';
+export type { KernelEnvironment } from './kernel/KernelEnvironment.js';
+export type { KernelEnvironmentForSchema } from './kernel/KernelEnvironmentForSchema.js';
+export type { KernelEnvironmentSchema } from './kernel/KernelEnvironmentSchema.js';
+export type { KernelEnvironmentValue } from './kernel/KernelEnvironmentValue.js';
+export type { KernelEnvironmentVariableDefinition } from './kernel/KernelEnvironmentVariableDefinition.js';
+export type { KernelEnvironmentVariablePrimitive } from './kernel/KernelEnvironmentVariablePrimitive.js';
+export type { KernelEnvironmentVariableType } from './kernel/KernelEnvironmentVariableType.js';
 export type { KernelEnvironmentVariablesOptions } from './kernel/KernelEnvironmentVariablesOptions.js';
 export type { KernelOptions } from './kernel/KernelOptions.js';
+export { KernelEnvironmentValidationError } from './kernel/KernelEnvironmentValidationError.js';
 
-export class Kernel {
+export class Kernel<
+  TEnvironmentSchema extends KernelEnvironmentSchema | undefined = undefined,
+> {
   private static readonly stateKey = Symbol.for(
     '@haskou/ddd-kernel/kernel-state',
   );
@@ -35,15 +50,23 @@ export class Kernel {
   private readonly schedulersList: Scheduler[] = [];
   private readonly shutdownHooks: ShutdownHook[] = [];
   private dependencyInjectionInstance: DependencyInjection | undefined;
+  private environmentVariables =
+    process.env as KernelEnvironmentForSchema<TEnvironmentSchema>;
 
-  private static get state(): { activeKernel?: Kernel } {
+  private static get state(): {
+    activeKernel?: Kernel<KernelEnvironmentSchema | undefined>;
+  } {
     const stateContainer = globalThis as typeof globalThis & {
-      [Kernel.stateKey]?: { activeKernel?: Kernel };
+      [Kernel.stateKey]?: {
+        activeKernel?: Kernel<KernelEnvironmentSchema | undefined>;
+      };
     };
 
     stateContainer[Kernel.stateKey] = stateContainer[Kernel.stateKey] ?? {};
 
-    return stateContainer[Kernel.stateKey] as { activeKernel?: Kernel };
+    return stateContainer[Kernel.stateKey] as {
+      activeKernel?: Kernel<KernelEnvironmentSchema | undefined>;
+    };
   }
 
   public static get configDirectory(): string {
@@ -70,7 +93,7 @@ export class Kernel {
     return Kernel.getActiveKernel().logger;
   }
 
-  public static get active(): Kernel {
+  public static get active(): Kernel<KernelEnvironmentSchema | undefined> {
     return Kernel.getActiveKernel();
   }
 
@@ -90,7 +113,9 @@ export class Kernel {
     return path.resolve(Kernel.rootDirectory, 'src');
   }
 
-  private static getActiveKernel(): Kernel {
+  private static getActiveKernel(): Kernel<
+    KernelEnvironmentSchema | undefined
+  > {
     if (!Kernel.state.activeKernel) {
       Kernel.state.activeKernel = new Kernel();
     }
@@ -98,9 +123,23 @@ export class Kernel {
     return Kernel.state.activeKernel;
   }
 
+  private static assertRequiredEnvironmentVariable(
+    name: string,
+    value: string | undefined,
+    schema: KernelEnvironmentSchema,
+  ): void {
+    if (schema[name]?.required === true && value === undefined) {
+      throw new KernelEnvironmentValidationError(
+        `Missing required environment variable "${name}".`,
+      );
+    }
+  }
+
   private static getEnvironmentVariablesPath(
     environment: string,
-    options: KernelEnvironmentVariablesOptions,
+    options: KernelEnvironmentVariablesOptions<
+      KernelEnvironmentSchema | undefined
+    >,
   ): string {
     return path.resolve(
       Kernel.rootDirectory,
@@ -108,19 +147,110 @@ export class Kernel {
     );
   }
 
+  private static parseBooleanEnvironmentVariable(
+    name: string,
+    value: string,
+  ): boolean {
+    if (['1', 'true', 'yes', 'on'].includes(value.toLowerCase())) {
+      return true;
+    }
+
+    if (['0', 'false', 'no', 'off'].includes(value.toLowerCase())) {
+      return false;
+    }
+
+    throw new KernelEnvironmentValidationError(
+      `Environment variable "${name}" must be a boolean.`,
+    );
+  }
+
+  private static parseNumberEnvironmentVariable(
+    name: string,
+    value: string,
+  ): number {
+    if (value.trim() === '') {
+      throw new KernelEnvironmentValidationError(
+        `Environment variable "${name}" must be a number.`,
+      );
+    }
+
+    const parsedValue = Number(value);
+
+    if (Number.isFinite(parsedValue)) {
+      return parsedValue;
+    }
+
+    throw new KernelEnvironmentValidationError(
+      `Environment variable "${name}" must be a number.`,
+    );
+  }
+
+  private static parseEnvironmentVariable(
+    name: string,
+    value: string,
+    schema: KernelEnvironmentSchema,
+  ): KernelEnvironmentValue {
+    const definition = schema[name];
+
+    if (definition.type === 'boolean') {
+      return Kernel.parseBooleanEnvironmentVariable(name, value);
+    }
+
+    if (definition.type === 'number') {
+      return Kernel.parseNumberEnvironmentVariable(name, value);
+    }
+
+    return value;
+  }
+
+  private static validateEnvironmentVariables<
+    TSchema extends KernelEnvironmentSchema,
+  >(schema: TSchema): KernelEnvironmentForSchema<TSchema> {
+    const environmentVariables: Record<string, KernelEnvironmentValue> = {};
+
+    for (const [name, definition] of Object.entries(schema)) {
+      const value = process.env[name] ?? definition.defaultValue?.toString();
+
+      Kernel.assertRequiredEnvironmentVariable(name, value, schema);
+
+      if (value !== undefined) {
+        environmentVariables[name] = Kernel.parseEnvironmentVariable(
+          name,
+          value,
+          schema,
+        );
+      }
+    }
+
+    return {
+      ...process.env,
+      ...environmentVariables,
+    } as KernelEnvironmentForSchema<TSchema>;
+  }
+
   public static loadEnvironmentVariables(
     environment?: string,
-    options: KernelEnvironmentVariablesOptions = {},
+    options: KernelEnvironmentVariablesOptions<
+      KernelEnvironmentSchema | undefined
+    > = {},
   ): DotenvConfigOutput {
     const environmentName = environment ?? process.env.NODE_ENV ?? 'local';
 
-    return dotenv.config({
+    const result = dotenv.config({
       override: options.override,
       path: Kernel.getEnvironmentVariablesPath(environmentName, options),
     });
+
+    if (options.schema) {
+      Kernel.validateEnvironmentVariables(options.schema);
+    }
+
+    return result;
   }
 
-  constructor(private readonly options: KernelOptions = {}) {
+  constructor(
+    private readonly options: KernelOptions<TEnvironmentSchema> = {},
+  ) {
     this.loggerInstance = options.logger ?? new ConsoleKernelLogger();
     this.dependencyInjectionInstance = options.di;
     Kernel.state.activeKernel = this;
@@ -188,8 +318,8 @@ export class Kernel {
     return this.dependencyInjectionInstance;
   }
 
-  public get environment(): NodeJS.ProcessEnv {
-    return Kernel.environment;
+  public get environment(): KernelEnvironmentForSchema<TEnvironmentSchema> {
+    return this.environmentVariables;
   }
 
   public get logger(): KernelLogger {
@@ -238,9 +368,20 @@ export class Kernel {
 
   public loadEnvironmentVariables(
     environment?: string,
-    options: KernelEnvironmentVariablesOptions = {},
+    options: KernelEnvironmentVariablesOptions<
+      KernelEnvironmentSchema | undefined
+    > = {},
   ): DotenvConfigOutput {
-    return Kernel.loadEnvironmentVariables(environment, options);
+    const result = Kernel.loadEnvironmentVariables(environment, {
+      ...options,
+      schema: options.schema ?? this.options.environmentSchema,
+    });
+
+    this.environmentVariables = this.options.environmentSchema
+      ? Kernel.validateEnvironmentVariables(this.options.environmentSchema)
+      : (process.env as KernelEnvironmentForSchema<TEnvironmentSchema>);
+
+    return result;
   }
 
   public getRoutes(): ServiceClass<Route>[] {
@@ -357,7 +498,9 @@ export class Kernel {
   }
 }
 
-export function createKernel(options?: KernelOptions): Kernel {
+export function createKernel<
+  TEnvironmentSchema extends KernelEnvironmentSchema | undefined = undefined,
+>(options?: KernelOptions<TEnvironmentSchema>): Kernel<TEnvironmentSchema> {
   return new Kernel(options);
 }
 

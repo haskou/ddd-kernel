@@ -18,10 +18,15 @@ import path from 'node:path';
 import GetUserByIdRoute from './apps/api/routes/GetUserByIdRoute.js';
 
 const rootDirectory = process.cwd();
+const environmentSchema = {
+  NODE_ENV: { defaultValue: 'local', type: 'string' },
+  PORT: { defaultValue: 3000, type: 'number' },
+} as const;
 
 // The kernel owns application lifecycle, dependency injection and shared
 // infrastructure such as logging.
 const kernel = new Kernel({
+  environmentSchema,
   servicesYamlPath: path.resolve(
     rootDirectory,
     'config',
@@ -33,7 +38,7 @@ const kernel = new Kernel({
 
 // Environment variables are loaded before DI/adapters read their process.env
 // fallbacks. With NODE_ENV unset this loads .env.local.
-kernel.loadEnvironmentVariables(process.env.NODE_ENV || 'local');
+kernel.loadEnvironmentVariables();
 
 // In development the container is rebuilt from default exports under src/.
 // In production it can reuse the generated services.yaml file.
@@ -64,7 +69,7 @@ const requestLoggerMiddleware: RequestHandler = (request, response, next) => {
 
 const server = new ExpressKernelServer({
   kernel,
-  port: Number(kernel.environment.PORT ?? 3000),
+  port: kernel.environment.PORT,
 });
 
 // The Express adapter stays optional. HTTP middleware, hooks and error handlers
@@ -88,9 +93,7 @@ server
 kernel.registerShutdownHook(() => server.close());
 
 await server.run();
-kernel.logger.info(
-  `Application running on port ${kernel.environment.PORT ?? 3000}`,
-);
+kernel.logger.info(`Application running on port ${kernel.environment.PORT}`);
 
 // Delegate OS signals to the kernel so consumers, schedulers, servers and logs
 // are stopped consistently.

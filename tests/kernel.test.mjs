@@ -6,7 +6,11 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { createKernel, Kernel } from '../dist/index.js';
+import {
+  createKernel,
+  Kernel,
+  KernelEnvironmentValidationError,
+} from '../dist/index.js';
 
 class TestConsumer {
   constructor(calls) {
@@ -510,4 +514,220 @@ test('loads base environment file when environment name is empty', async (contex
   Kernel.loadEnvironmentVariables('');
 
   assert.equal(Kernel.environment.CUSTOM_ENV_VALUE, 'base');
+});
+
+test('validates typed environment schemas', async (context) => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const previousDirectory = process.cwd();
+  const previousHttpPort = process.env.HTTP_PORT;
+  const previousEnableJobs = process.env.ENABLE_JOBS;
+  const previousOptionalName = process.env.OPTIONAL_NAME;
+
+  delete process.env.HTTP_PORT;
+  delete process.env.ENABLE_JOBS;
+  delete process.env.OPTIONAL_NAME;
+  process.chdir(temporaryDirectory);
+  context.after(() => {
+    process.chdir(previousDirectory);
+
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+
+    if (previousEnableJobs === undefined) {
+      delete process.env.ENABLE_JOBS;
+    } else {
+      process.env.ENABLE_JOBS = previousEnableJobs;
+    }
+
+    if (previousOptionalName === undefined) {
+      delete process.env.OPTIONAL_NAME;
+    } else {
+      process.env.OPTIONAL_NAME = previousOptionalName;
+    }
+  });
+
+  await writeFile(
+    path.join(temporaryDirectory, '.env.local'),
+    ['HTTP_PORT=3004', 'ENABLE_JOBS=yes'].join('\n'),
+  );
+
+  const kernel = new Kernel({
+    environmentSchema: {
+      ENABLE_JOBS: { defaultValue: false, type: 'boolean' },
+      HTTP_PORT: { required: true, type: 'number' },
+      OPTIONAL_NAME: { type: 'string' },
+    },
+  });
+
+  kernel.loadEnvironmentVariables();
+
+  assert.equal(kernel.environment.HTTP_PORT, 3004);
+  assert.equal(kernel.environment.ENABLE_JOBS, true);
+  assert.equal(kernel.environment.OPTIONAL_NAME, undefined);
+});
+
+test('uses typed environment defaults when variables are absent', async (context) => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const previousDirectory = process.cwd();
+  const previousEnableJobs = process.env.ENABLE_JOBS;
+
+  delete process.env.ENABLE_JOBS;
+  process.chdir(temporaryDirectory);
+  context.after(() => {
+    process.chdir(previousDirectory);
+
+    if (previousEnableJobs === undefined) {
+      delete process.env.ENABLE_JOBS;
+    } else {
+      process.env.ENABLE_JOBS = previousEnableJobs;
+    }
+  });
+
+  await writeFile(path.join(temporaryDirectory, '.env.local'), '');
+
+  const kernel = new Kernel({
+    environmentSchema: {
+      ENABLE_JOBS: { defaultValue: false, type: 'boolean' },
+    },
+  });
+
+  kernel.loadEnvironmentVariables();
+
+  assert.equal(kernel.environment.ENABLE_JOBS, false);
+});
+
+test('throws when required typed environment variables are missing', () => {
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  delete process.env.HTTP_PORT;
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        HTTP_PORT: { required: true, type: 'number' },
+      },
+    });
+
+    assert.throws(
+      () => kernel.loadEnvironmentVariables(),
+      KernelEnvironmentValidationError,
+    );
+  } finally {
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  }
+});
+
+test('throws when typed environment variables cannot be parsed', () => {
+  const previousHttpPort = process.env.HTTP_PORT;
+  const previousEnableJobs = process.env.ENABLE_JOBS;
+
+  process.env.HTTP_PORT = 'not-a-number';
+  process.env.ENABLE_JOBS = 'maybe';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        ENABLE_JOBS: { type: 'boolean' },
+        HTTP_PORT: { type: 'number' },
+      },
+    });
+
+    assert.throws(
+      () => kernel.loadEnvironmentVariables(),
+      /Environment variable "ENABLE_JOBS" must be a boolean|Environment variable "HTTP_PORT" must be a number/,
+    );
+  } finally {
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+
+    if (previousEnableJobs === undefined) {
+      delete process.env.ENABLE_JOBS;
+    } else {
+      process.env.ENABLE_JOBS = previousEnableJobs;
+    }
+  }
+});
+
+test('throws when numeric typed environment variables are blank', () => {
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  process.env.HTTP_PORT = '';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        HTTP_PORT: { type: 'number' },
+      },
+    });
+
+    assert.throws(
+      () => kernel.loadEnvironmentVariables(),
+      /Environment variable "HTTP_PORT" must be a number/,
+    );
+  } finally {
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  }
+});
+
+test('throws when numeric typed environment variables are not finite numbers', () => {
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  process.env.HTTP_PORT = 'not-a-number';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        HTTP_PORT: { type: 'number' },
+      },
+    });
+
+    assert.throws(
+      () => kernel.loadEnvironmentVariables(),
+      /Environment variable "HTTP_PORT" must be a number/,
+    );
+  } finally {
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  }
+});
+
+test('keeps typed string environment variables as strings', () => {
+  const previousApplicationName = process.env.APPLICATION_NAME;
+
+  process.env.APPLICATION_NAME = 'ddd-kernel-example';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        APPLICATION_NAME: { type: 'string' },
+      },
+    });
+
+    kernel.loadEnvironmentVariables();
+
+    assert.equal(kernel.environment.APPLICATION_NAME, 'ddd-kernel-example');
+  } finally {
+    if (previousApplicationName === undefined) {
+      delete process.env.APPLICATION_NAME;
+    } else {
+      process.env.APPLICATION_NAME = previousApplicationName;
+    }
+  }
 });
