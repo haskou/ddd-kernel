@@ -1,4 +1,5 @@
 import type { Kernel } from '../../Kernel.js';
+import type { KernelEnvironmentSchema } from '../../kernel/KernelEnvironmentSchema.js';
 
 export interface ConsumerExecutionContext {
   readonly causationId?: string;
@@ -6,7 +7,7 @@ export interface ConsumerExecutionContext {
   readonly eventId: string;
   readonly eventName: string;
   readonly exchange: string;
-  readonly kernel: Kernel;
+  readonly kernel: Kernel<KernelEnvironmentSchema | undefined>;
   readonly metadata: Readonly<Record<string, unknown>>;
   readonly rawMessage?: unknown;
   readonly queueName: string;
