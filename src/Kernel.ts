@@ -1,3 +1,4 @@
+import dotenv, { type DotenvConfigOutput } from 'dotenv';
 import path from 'node:path';
 
 import type { Consumer } from './adapters/pubsub/index.js';
@@ -11,6 +12,7 @@ import type { ServiceClass } from './infrastructure/dependency-injection/index.j
 import type { Initializer, Runtime } from './infrastructure/lifecycle/index.js';
 import type { Scheduler } from './infrastructure/scheduler/index.js';
 import type { KernelDependencyInjectionOptions } from './kernel/KernelDependencyInjectionOptions.js';
+import type { KernelEnvironmentVariablesOptions } from './kernel/KernelEnvironmentVariablesOptions.js';
 import type { KernelOptions } from './kernel/KernelOptions.js';
 import type { ShutdownCandidate } from './kernel/ShutdownCandidate.js';
 
@@ -18,6 +20,7 @@ import { ConsoleKernelLogger } from './adapters/kernel/index.js';
 import { DependencyInjection } from './infrastructure/dependency-injection/index.js';
 
 export type { KernelDependencyInjectionOptions } from './kernel/KernelDependencyInjectionOptions.js';
+export type { KernelEnvironmentVariablesOptions } from './kernel/KernelEnvironmentVariablesOptions.js';
 export type { KernelOptions } from './kernel/KernelOptions.js';
 
 export class Kernel {
@@ -59,6 +62,10 @@ export class Kernel {
     return Kernel.getActiveKernel().di;
   }
 
+  public static get environment(): NodeJS.ProcessEnv {
+    return process.env;
+  }
+
   public static get logger(): KernelLogger {
     return Kernel.getActiveKernel().logger;
   }
@@ -89,6 +96,28 @@ export class Kernel {
     }
 
     return Kernel.state.activeKernel;
+  }
+
+  private static getEnvironmentVariablesPath(
+    environment: string,
+    options: KernelEnvironmentVariablesOptions,
+  ): string {
+    return path.resolve(
+      Kernel.rootDirectory,
+      options.path ?? (environment ? `.env.${environment}` : '.env'),
+    );
+  }
+
+  public static loadEnvironmentVariables(
+    environment?: string,
+    options: KernelEnvironmentVariablesOptions = {},
+  ): DotenvConfigOutput {
+    const environmentName = environment ?? process.env.NODE_ENV ?? 'local';
+
+    return dotenv.config({
+      override: options.override,
+      path: Kernel.getEnvironmentVariablesPath(environmentName, options),
+    });
   }
 
   constructor(private readonly options: KernelOptions = {}) {
@@ -159,6 +188,10 @@ export class Kernel {
     return this.dependencyInjectionInstance;
   }
 
+  public get environment(): NodeJS.ProcessEnv {
+    return Kernel.environment;
+  }
+
   public get logger(): KernelLogger {
     return this.loggerInstance;
   }
@@ -201,6 +234,13 @@ export class Kernel {
 
     await this.dependencyInjectionInstance.compile();
     Kernel.state.activeKernel = this;
+  }
+
+  public loadEnvironmentVariables(
+    environment?: string,
+    options: KernelEnvironmentVariablesOptions = {},
+  ): DotenvConfigOutput {
+    return Kernel.loadEnvironmentVariables(environment, options);
   }
 
   public getRoutes(): ServiceClass<Route>[] {

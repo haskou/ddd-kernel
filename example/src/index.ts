@@ -31,10 +31,14 @@ const kernel = new Kernel({
   sourceDirectory: path.resolve(rootDirectory, 'src'),
 });
 
+// Environment variables are loaded before DI/adapters read their process.env
+// fallbacks. With NODE_ENV unset this loads .env.local.
+kernel.loadEnvironmentVariables(process.env.NODE_ENV || 'local');
+
 // In development the container is rebuilt from default exports under src/.
 // In production it can reuse the generated services.yaml file.
 await kernel.dependencyInjection({
-  containerBuild: process.env.NODE_ENV !== 'production',
+  containerBuild: kernel.environment.NODE_ENV !== 'production',
 });
 
 // Consumer middleware is registered once and runs around every domain event
@@ -60,7 +64,7 @@ const requestLoggerMiddleware: RequestHandler = (request, response, next) => {
 
 const server = new ExpressKernelServer({
   kernel,
-  port: Number(process.env.PORT ?? 3000),
+  port: Number(kernel.environment.PORT ?? 3000),
 });
 
 // The Express adapter stays optional. HTTP middleware, hooks and error handlers
@@ -84,7 +88,9 @@ server
 kernel.registerShutdownHook(() => server.close());
 
 await server.run();
-kernel.logger.info(`Application running on port ${process.env.PORT ?? 3000}`);
+kernel.logger.info(
+  `Application running on port ${kernel.environment.PORT ?? 3000}`,
+);
 
 // Delegate OS signals to the kernel so consumers, schedulers, servers and logs
 // are stopped consistently.

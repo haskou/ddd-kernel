@@ -7,8 +7,10 @@ Most applications should configure DI through the kernel:
 ```ts
 const kernel = new Kernel();
 
+kernel.loadEnvironmentVariables();
+
 await kernel.dependencyInjection({
-  containerBuild: process.env.NODE_ENV !== 'production',
+  containerBuild: kernel.environment.NODE_ENV !== 'production',
 });
 ```
 

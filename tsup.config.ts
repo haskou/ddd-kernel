@@ -34,6 +34,7 @@ export default defineConfig({
   },
   external: [
     'amqplib',
+    'dotenv',
     'express',
     'fs-extra',
     'mongodb',

@@ -367,3 +367,147 @@ test('creates a default active kernel for static getters', () => {
 test('creates kernels through the factory function', () => {
   assert.ok(createKernel() instanceof Kernel);
 });
+
+test('loads local environment variables by default', async (context) => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const previousDirectory = process.cwd();
+  const previousNodeEnvironment = process.env.NODE_ENV;
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  delete process.env.NODE_ENV;
+  delete process.env.HTTP_PORT;
+  process.chdir(temporaryDirectory);
+  context.after(() => {
+    process.chdir(previousDirectory);
+
+    if (previousNodeEnvironment === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = previousNodeEnvironment;
+    }
+
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  });
+
+  await writeFile(
+    path.join(temporaryDirectory, '.env.local'),
+    'HTTP_PORT=3001',
+  );
+
+  const kernel = new Kernel();
+  const result = kernel.loadEnvironmentVariables();
+
+  assert.equal(result.parsed.HTTP_PORT, '3001');
+  assert.equal(kernel.environment.HTTP_PORT, '3001');
+  assert.equal(Kernel.environment.HTTP_PORT, '3001');
+});
+
+test('loads environment variables from NODE_ENV by default', async (context) => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const previousDirectory = process.cwd();
+  const previousNodeEnvironment = process.env.NODE_ENV;
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  process.env.NODE_ENV = 'ci';
+  delete process.env.HTTP_PORT;
+  process.chdir(temporaryDirectory);
+  context.after(() => {
+    process.chdir(previousDirectory);
+
+    if (previousNodeEnvironment === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = previousNodeEnvironment;
+    }
+
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  });
+
+  await writeFile(path.join(temporaryDirectory, '.env.ci'), 'HTTP_PORT=3003');
+
+  Kernel.loadEnvironmentVariables();
+
+  assert.equal(Kernel.environment.HTTP_PORT, '3003');
+});
+
+test('loads named environment variables and supports override', async (context) => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const previousDirectory = process.cwd();
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  process.env.HTTP_PORT = '3000';
+  process.chdir(temporaryDirectory);
+  context.after(() => {
+    process.chdir(previousDirectory);
+
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  });
+
+  await writeFile(path.join(temporaryDirectory, '.env.test'), 'HTTP_PORT=3002');
+
+  Kernel.loadEnvironmentVariables('test');
+  assert.equal(process.env.HTTP_PORT, '3000');
+
+  Kernel.loadEnvironmentVariables('test', { override: true });
+  assert.equal(process.env.HTTP_PORT, '3002');
+});
+
+test('loads environment variables from an explicit path', async (context) => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const previousCustomValue = process.env.CUSTOM_ENV_VALUE;
+  const environmentPath = path.join(temporaryDirectory, 'custom.env');
+
+  delete process.env.CUSTOM_ENV_VALUE;
+  context.after(() => {
+    if (previousCustomValue === undefined) {
+      delete process.env.CUSTOM_ENV_VALUE;
+    } else {
+      process.env.CUSTOM_ENV_VALUE = previousCustomValue;
+    }
+  });
+
+  await writeFile(environmentPath, 'CUSTOM_ENV_VALUE=loaded');
+
+  Kernel.loadEnvironmentVariables('', { path: environmentPath });
+
+  assert.equal(Kernel.environment.CUSTOM_ENV_VALUE, 'loaded');
+});
+
+test('loads base environment file when environment name is empty', async (context) => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const previousDirectory = process.cwd();
+  const previousCustomValue = process.env.CUSTOM_ENV_VALUE;
+
+  delete process.env.CUSTOM_ENV_VALUE;
+  process.chdir(temporaryDirectory);
+  context.after(() => {
+    process.chdir(previousDirectory);
+
+    if (previousCustomValue === undefined) {
+      delete process.env.CUSTOM_ENV_VALUE;
+    } else {
+      process.env.CUSTOM_ENV_VALUE = previousCustomValue;
+    }
+  });
+
+  await writeFile(
+    path.join(temporaryDirectory, '.env'),
+    'CUSTOM_ENV_VALUE=base',
+  );
+
+  Kernel.loadEnvironmentVariables('');
+
+  assert.equal(Kernel.environment.CUSTOM_ENV_VALUE, 'base');
+});
