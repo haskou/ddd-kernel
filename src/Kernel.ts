@@ -168,6 +168,12 @@ export class Kernel<
     name: string,
     value: string,
   ): number {
+    if (value.trim() === '') {
+      throw new KernelEnvironmentValidationError(
+        `Environment variable "${name}" must be a number.`,
+      );
+    }
+
     const parsedValue = Number(value);
 
     if (Number.isFinite(parsedValue)) {

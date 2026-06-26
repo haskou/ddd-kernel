@@ -657,3 +657,77 @@ test('throws when typed environment variables cannot be parsed', () => {
     }
   }
 });
+
+test('throws when numeric typed environment variables are blank', () => {
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  process.env.HTTP_PORT = '';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        HTTP_PORT: { type: 'number' },
+      },
+    });
+
+    assert.throws(
+      () => kernel.loadEnvironmentVariables(),
+      /Environment variable "HTTP_PORT" must be a number/,
+    );
+  } finally {
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  }
+});
+
+test('throws when numeric typed environment variables are not finite numbers', () => {
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  process.env.HTTP_PORT = 'not-a-number';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        HTTP_PORT: { type: 'number' },
+      },
+    });
+
+    assert.throws(
+      () => kernel.loadEnvironmentVariables(),
+      /Environment variable "HTTP_PORT" must be a number/,
+    );
+  } finally {
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  }
+});
+
+test('keeps typed string environment variables as strings', () => {
+  const previousApplicationName = process.env.APPLICATION_NAME;
+
+  process.env.APPLICATION_NAME = 'ddd-kernel-example';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        APPLICATION_NAME: { type: 'string' },
+      },
+    });
+
+    kernel.loadEnvironmentVariables();
+
+    assert.equal(kernel.environment.APPLICATION_NAME, 'ddd-kernel-example');
+  } finally {
+    if (previousApplicationName === undefined) {
+      delete process.env.APPLICATION_NAME;
+    } else {
+      process.env.APPLICATION_NAME = previousApplicationName;
+    }
+  }
+});
