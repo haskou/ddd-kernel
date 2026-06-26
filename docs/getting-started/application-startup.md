@@ -16,28 +16,40 @@ const kernel = new Kernel({
   servicesYamlPath: 'config/container/services.yaml',
 });
 
+kernel.loadEnvironmentVariables(process.env.NODE_ENV || 'local');
+
 await kernel.dependencyInjection({
-  containerBuild: process.env.CONTAINER_BUILD === 'true',
+  containerBuild: kernel.environment.NODE_ENV !== 'production',
 });
 kernel.registerRoutes(GetUserByIdRoute);
 kernel.registerConsumers(...applicationConsumers);
 kernel.registerSchedulers(...recurringSchedulers);
 
-const server = new ExpressKernelServer({ kernel, port: 3000 });
+const server = new ExpressKernelServer({
+  kernel,
+  port: Number(kernel.environment.PORT ?? 3000),
+});
 kernel.registerShutdownHook(() => server.close());
 
 await server.run();
 await kernel.runConsumers();
 await kernel.runSchedulers();
 
-kernel.logger.info('Application running on port 3000');
+kernel.logger.info(
+  `Application running on port ${kernel.environment.PORT ?? 3000}`,
+);
 ```
 
-`CONTAINER_BUILD=true` regenerates `config/container/services.yaml`. Without it,
-the generated YAML is loaded.
+`loadEnvironmentVariables()` loads `.env.local` by default when `NODE_ENV` is
+not set. Passing `test` loads `.env.test`; passing an empty string loads `.env`.
 
-`new Kernel(...)` configures defaults for the runtime. `kernel.dependencyInjection(...)`
-can override the DI-specific values for a particular boot.
+`containerBuild: true` regenerates `config/container/services.yaml`. Production
+runtimes should usually load the generated YAML instead of rebuilding from
+`src`.
+
+`new Kernel(...)` configures defaults for the runtime.
+`kernel.dependencyInjection(...)` can override the DI-specific values for a
+particular boot.
 
 Call `kernel.shutdown()` from your process signal handlers to stop consumers,
 stop schedulers, close servers, flush logs and release connections registered

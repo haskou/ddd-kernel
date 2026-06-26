@@ -44,6 +44,53 @@ const kernel = new Kernel({
 `servicesYamlPath` and `sourceDirectory` can also be passed directly to
 `kernel.dependencyInjection(...)`; the method-level value wins.
 
+## Environment Variables
+
+Load environment variables before dependency injection or adapters read their
+`process.env` fallbacks:
+
+```ts
+const kernel = new Kernel();
+
+kernel.loadEnvironmentVariables(process.env.NODE_ENV || 'local');
+```
+
+The default environment is `process.env.NODE_ENV || 'local'`, so calling
+`kernel.loadEnvironmentVariables()` loads `.env.local` when `NODE_ENV` is not
+set.
+
+| Call                                                                | Loaded file                        |
+| ------------------------------------------------------------------- | ---------------------------------- |
+| `kernel.loadEnvironmentVariables()`                                 | `.env.${NODE_ENV}` or `.env.local` |
+| `kernel.loadEnvironmentVariables('test')`                           | `.env.test`                        |
+| `kernel.loadEnvironmentVariables('')`                               | `.env`                             |
+| `kernel.loadEnvironmentVariables('local', { path: 'config/.env' })` | `config/.env`                      |
+
+Existing variables are not overwritten unless `override` is enabled:
+
+```ts
+kernel.loadEnvironmentVariables('local', { override: true });
+```
+
+`Kernel.environment` and `kernel.environment` expose `process.env` through one
+kernel-owned access point:
+
+```ts
+const port = Number(Kernel.environment.HTTP_PORT ?? 3000);
+```
+
+Applications can type known variables by augmenting `NodeJS.ProcessEnv`:
+
+```ts
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      HTTP_PORT?: string;
+    }
+  }
+}
+```
+
 ## Dependency Injection
 
 Most applications call this once during startup:
