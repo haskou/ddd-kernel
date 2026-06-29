@@ -5,10 +5,8 @@ export interface KernelEnvironmentVariableDefinition<
   TType extends KernelEnvironmentVariableType = KernelEnvironmentVariableType,
   TRequired extends boolean = boolean,
   TChoices extends
-    | readonly KernelEnvironmentVariablePrimitive<TType>[]
-    | undefined =
-    | readonly KernelEnvironmentVariablePrimitive<TType>[]
-    | undefined,
+    readonly KernelEnvironmentVariablePrimitive<TType>[] | undefined =
+    readonly KernelEnvironmentVariablePrimitive<TType>[] | undefined,
 > {
   readonly choices?: TChoices;
   readonly defaultValue?: TChoices extends readonly KernelEnvironmentVariablePrimitive<TType>[]
