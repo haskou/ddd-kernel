@@ -54,7 +54,7 @@ test('filters ignorable autowire warnings and forwards actionable logs', () => {
 
   assert.deepEqual(calls, [
     'debug:Ignored Autowire: file has export default declaration but no runtime default export: Contract.ts',
-    "debug:Ignored Autowire: failed to create definition for HttpClient: Cannot read properties of undefined (reading 'body')",
+    "warn:Autowire: failed to create definition for HttpClient: Cannot read properties of undefined (reading 'body')",
     'warn:Autowire: could not resolve dependency "Repository"',
     'info:Autowire scan completed',
     'debug:Autowire debug message',

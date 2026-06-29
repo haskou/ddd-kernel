@@ -8,13 +8,7 @@ export class AutowireWarningFilter implements Logger {
       message.startsWith(
         'Autowire: file has export default declaration but no runtime default export:',
       ) ||
-      message.startsWith(
-        'Autowire: failed to create definition for undefined:',
-      ) ||
-      (message.startsWith('Autowire: failed to create definition for ') &&
-        message.includes(
-          "Cannot read properties of undefined (reading 'body')",
-        ))
+      message.startsWith('Autowire: failed to create definition for undefined:')
     );
   }
 
