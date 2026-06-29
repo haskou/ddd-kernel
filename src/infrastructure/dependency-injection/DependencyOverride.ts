@@ -3,6 +3,4 @@ import type { FactoryDependencyOverride } from './FactoryDependencyOverride.js';
 import type { ValueDependencyOverride } from './ValueDependencyOverride.js';
 
 export type DependencyOverride =
-  | ClassDependencyOverride
-  | FactoryDependencyOverride
-  | ValueDependencyOverride;
+  ClassDependencyOverride | FactoryDependencyOverride | ValueDependencyOverride;

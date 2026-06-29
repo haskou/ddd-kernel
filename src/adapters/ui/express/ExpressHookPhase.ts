@@ -1,4 +1,2 @@
 export type ExpressHookPhase =
-  | 'afterControllers'
-  | 'beforeControllers'
-  | 'beforeErrors';
+  'afterControllers' | 'beforeControllers' | 'beforeErrors';
