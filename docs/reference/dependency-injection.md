@@ -125,3 +125,13 @@ await kernel.dependencyInjection({
 
 This avoids local bridge contracts or hand-written aliases when applications
 inject contracts exported by this package.
+
+## Autowire Noise
+
+Container generation ignores type-only default exports and other files that
+look like TypeScript declarations but have no runtime default export. Those
+files are skipped without warning so generated logs stay focused on actionable
+container issues.
+
+Warnings that remain during autowire should describe a concrete service,
+dependency symbol or import that needs to be fixed.

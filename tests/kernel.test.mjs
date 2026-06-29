@@ -641,7 +641,7 @@ test('throws when typed environment variables cannot be parsed', () => {
 
     assert.throws(
       () => kernel.loadEnvironmentVariables(),
-      /Environment variable "ENABLE_JOBS" must be a boolean|Environment variable "HTTP_PORT" must be a number/,
+      /Environment variable "ENABLE_JOBS" has invalid boolean value "maybe"|Environment variable "HTTP_PORT" has invalid number value "not-a-number"/,
     );
   } finally {
     if (previousHttpPort === undefined) {
@@ -658,7 +658,7 @@ test('throws when typed environment variables cannot be parsed', () => {
   }
 });
 
-test('throws when numeric typed environment variables are blank', () => {
+test('treats blank optional typed environment variables as absent', () => {
   const previousHttpPort = process.env.HTTP_PORT;
 
   process.env.HTTP_PORT = '';
@@ -670,9 +670,57 @@ test('throws when numeric typed environment variables are blank', () => {
       },
     });
 
+    kernel.loadEnvironmentVariables();
+
+    assert.equal(kernel.environment.HTTP_PORT, undefined);
+  } finally {
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  }
+});
+
+test('uses defaults for blank optional typed environment variables', () => {
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  process.env.HTTP_PORT = '';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        HTTP_PORT: { defaultValue: 3000, type: 'number' },
+      },
+    });
+
+    kernel.loadEnvironmentVariables();
+
+    assert.equal(kernel.environment.HTTP_PORT, 3000);
+  } finally {
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+  }
+});
+
+test('throws when required typed environment variables are blank', () => {
+  const previousHttpPort = process.env.HTTP_PORT;
+
+  process.env.HTTP_PORT = '';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        HTTP_PORT: { required: true, type: 'number' },
+      },
+    });
+
     assert.throws(
       () => kernel.loadEnvironmentVariables(),
-      /Environment variable "HTTP_PORT" must be a number/,
+      /Blank required environment variable "HTTP_PORT"/,
     );
   } finally {
     if (previousHttpPort === undefined) {
@@ -697,7 +745,7 @@ test('throws when numeric typed environment variables are not finite numbers', (
 
     assert.throws(
       () => kernel.loadEnvironmentVariables(),
-      /Environment variable "HTTP_PORT" must be a number/,
+      /Environment variable "HTTP_PORT" has invalid number value "not-a-number"/,
     );
   } finally {
     if (previousHttpPort === undefined) {
