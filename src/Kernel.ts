@@ -28,6 +28,7 @@ export type { KernelDefaultEnvironment } from './kernel/KernelDefaultEnvironment
 export type { KernelEnvironment } from './kernel/KernelEnvironment.js';
 export type { KernelEnvironmentForSchema } from './kernel/KernelEnvironmentForSchema.js';
 export type { KernelEnvironmentSchema } from './kernel/KernelEnvironmentSchema.js';
+export type { KernelEnvironmentSchemaInput } from './kernel/KernelEnvironmentSchemaInput.js';
 export type { KernelEnvironmentValue } from './kernel/KernelEnvironmentValue.js';
 export type { KernelEnvironmentVariableDefinition } from './kernel/KernelEnvironmentVariableDefinition.js';
 export type { KernelEnvironmentVariablePrimitive } from './kernel/KernelEnvironmentVariablePrimitive.js';
