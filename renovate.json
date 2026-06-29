@@ -18,13 +18,13 @@
       "automergeType": "pr"
     },
     {
-      "description": "Dev deps: patch/minor grouped, automerge, no release",
+      "description": "Dev deps: patch/minor grouped, manual review, no release",
       "groupName": "non-major dev dependencies",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
       "semanticCommitType": "chore",
       "semanticCommitScope": "deps",
-      "automerge": true,
+      "automerge": false,
       "automergeType": "pr"
     },
     {
