@@ -48,6 +48,7 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
         NODE_ENV: { choices: ['local', 'test'], type: 'string' },
       } as const;
       const kernel = new Kernel({ environmentSchema });
+      class ArbitraryService {}
       const nodeEnvironment: 'local' | 'test' | undefined = kernel.environment.NODE_ENV;
       const httpPort: 3000 | 3001 | undefined = kernel.environment.HTTP_PORT;
       const enableJobs: true | false | undefined = kernel.environment.ENABLE_JOBS;
@@ -78,6 +79,8 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
       void new Kernel({ environmentSchema: invalidNumberChoicesSchema });
       // @ts-expect-error defaultValue must be one of the declared choices.
       void new Kernel({ environmentSchema: invalidDefaultChoicesSchema });
+      // @ts-expect-error registered routes must intentionally extend KernelRoute.
+      kernel.registerRoutes(ArbitraryService);
       void policy;
       void ExpressKernelServer;
     `,

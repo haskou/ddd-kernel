@@ -1,1 +1,3 @@
-export abstract class KernelRoute {}
+export abstract class KernelRoute {
+  declare protected readonly kernelRouteContract: never;
+}
