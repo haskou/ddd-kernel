@@ -107,7 +107,18 @@ kernel.environment.SERVICE_NAME; // string | undefined
 Required variables throw `KernelEnvironmentValidationError` when they are
 missing. `number` and `boolean` values are parsed after `.env` files are loaded.
 Boolean values accept `true`, `false`, `1`, `0`, `yes`, `no`, `on` and `off`.
-Blank numeric values are rejected instead of being coerced to `0`.
+
+Blank values are handled before parsing:
+
+| Schema                                   | Environment value | Result                                 |
+| ---------------------------------------- | ----------------- | -------------------------------------- |
+| `{ type: 'number' }`                     | `FOO=`            | `kernel.environment.FOO === undefined` |
+| `{ type: 'number', defaultValue: 3000 }` | `FOO=`            | `kernel.environment.FOO === 3000`      |
+| `{ type: 'number', required: true }`     | `FOO=`            | `KernelEnvironmentValidationError`     |
+| `{ type: 'number' }`                     | `FOO=abc`         | `KernelEnvironmentValidationError`     |
+
+Validation errors distinguish missing required variables, blank required
+variables and invalid parsed values.
 
 `choices` restricts the allowed runtime values and narrows the TypeScript type
 when the schema is declared `as const`:

@@ -137,6 +137,18 @@ export class Kernel<
     }
   }
 
+  private static assertRequiredEnvironmentVariableIsNotBlank(
+    name: string,
+    value: string,
+    schema: KernelEnvironmentSchema,
+  ): void {
+    if (schema[name]?.required === true && value.trim() === '') {
+      throw new KernelEnvironmentValidationError(
+        `Blank required environment variable "${name}".`,
+      );
+    }
+  }
+
   private static assertEnvironmentVariableChoice(
     name: string,
     value: KernelEnvironmentValue,
@@ -176,7 +188,7 @@ export class Kernel<
     }
 
     throw new KernelEnvironmentValidationError(
-      `Environment variable "${name}" must be a boolean.`,
+      `Environment variable "${name}" has invalid boolean value "${value}".`,
     );
   }
 
@@ -184,12 +196,6 @@ export class Kernel<
     name: string,
     value: string,
   ): number {
-    if (value.trim() === '') {
-      throw new KernelEnvironmentValidationError(
-        `Environment variable "${name}" must be a number.`,
-      );
-    }
-
     const parsedValue = Number(value);
 
     if (Number.isFinite(parsedValue)) {
@@ -197,7 +203,7 @@ export class Kernel<
     }
 
     throw new KernelEnvironmentValidationError(
-      `Environment variable "${name}" must be a number.`,
+      `Environment variable "${name}" has invalid number value "${value}".`,
     );
   }
 
@@ -229,22 +235,71 @@ export class Kernel<
     return value;
   }
 
+  private static getEnvironmentVariableValue(
+    name: string,
+    definition: KernelEnvironmentSchema[string],
+    schema: KernelEnvironmentSchema,
+  ): string | undefined {
+    const value = process.env[name];
+
+    Kernel.assertRequiredEnvironmentVariable(name, value, schema);
+
+    if (value !== undefined) {
+      Kernel.assertRequiredEnvironmentVariableIsNotBlank(name, value, schema);
+    }
+
+    if (value !== undefined && value.trim() !== '') {
+      return value;
+    }
+
+    return definition.defaultValue?.toString();
+  }
+
+  private static shouldUnsetBlankOptionalEnvironmentVariable(
+    name: string,
+    value: string | undefined,
+    valueOrDefault: string | undefined,
+    schema: KernelEnvironmentSchema,
+  ): boolean {
+    return (
+      value !== undefined &&
+      value.trim() === '' &&
+      valueOrDefault === undefined &&
+      schema[name]?.required !== true
+    );
+  }
+
   private static validateEnvironmentVariables<
     TSchema extends KernelEnvironmentSchema,
   >(schema: TSchema): KernelEnvironmentForSchema<TSchema> {
-    const environmentVariables: Record<string, KernelEnvironmentValue> = {};
+    const environmentVariables: Record<
+      string,
+      KernelEnvironmentValue | undefined
+    > = {};
 
     for (const [name, definition] of Object.entries(schema)) {
-      const value = process.env[name] ?? definition.defaultValue?.toString();
+      const value = process.env[name];
+      const valueOrDefault = Kernel.getEnvironmentVariableValue(
+        name,
+        definition,
+        schema,
+      );
 
-      Kernel.assertRequiredEnvironmentVariable(name, value, schema);
-
-      if (value !== undefined) {
+      if (valueOrDefault !== undefined) {
         environmentVariables[name] = Kernel.parseEnvironmentVariable(
           name,
-          value,
+          valueOrDefault,
           schema,
         );
+      } else if (
+        Kernel.shouldUnsetBlankOptionalEnvironmentVariable(
+          name,
+          value,
+          valueOrDefault,
+          schema,
+        )
+      ) {
+        environmentVariables[name] = undefined;
       }
     }
 

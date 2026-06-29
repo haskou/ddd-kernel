@@ -13,6 +13,8 @@ import type { DefinitionMetadata } from './DefinitionMetadata.js';
 import type { DependencyInjectionOptions } from './DependencyInjectionOptions.js';
 import type { DependencyOverride } from './DependencyOverride.js';
 
+import { AutowireWarningFilter } from './AutowireWarningFilter.js';
+
 export class DependencyInjection implements ServiceResolver {
   private static configuredInstance: DependencyInjection | undefined;
   private autowire: Autowire | undefined;
@@ -295,6 +297,18 @@ export class DependencyInjection implements ServiceResolver {
     }
   }
 
+  private async processAutowire(): Promise<void> {
+    const previousLogger = this.container.logger;
+
+    this.container.logger = new AutowireWarningFilter(previousLogger);
+
+    try {
+      await this.autowire?.process();
+    } finally {
+      this.container.logger = previousLogger;
+    }
+  }
+
   private registerParentAliases(): void {
     for (const [id, definition] of this.definitions.entries()) {
       if (definition._abstract === true || !definition._parent) {
@@ -313,7 +327,7 @@ export class DependencyInjection implements ServiceResolver {
         this.options.servicesYamlPath,
         false,
       );
-      await this.autowire.process();
+      await this.processAutowire();
     } else {
       this.loader = new YamlFileLoader(this.container);
       await this.loader.load(this.options.servicesYamlPath);

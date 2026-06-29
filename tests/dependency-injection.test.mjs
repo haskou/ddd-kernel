@@ -7,7 +7,11 @@ import test from 'node:test';
 
 import { Reference } from 'node-dependency-injection';
 
-import { DependencyInjection } from '../dist/infrastructure/dependency-injection/index.js';
+import { DomainEventPublisher } from '../dist/domain/index.js';
+import {
+  AutowireWarningFilter,
+  DependencyInjection,
+} from '../dist/infrastructure/dependency-injection/index.js';
 
 class ContractRepository {}
 
@@ -21,10 +25,41 @@ class AliasRepository {}
 
 class ConcreteService {}
 
+class MessageBus extends DomainEventPublisher {
+  async publish() {}
+}
+
 const serviceIdFor = (ClassDefinition) =>
   Buffer.from(
     `${ClassDefinition.name}.ts__${ClassDefinition.name}__${ClassDefinition.name}`,
   ).toString('base64');
+
+test('filters ignorable autowire warnings and forwards actionable logs', () => {
+  const calls = [];
+  const logger = new AutowireWarningFilter({
+    debug: (message) => calls.push(`debug:${message}`),
+    info: (message) => calls.push(`info:${message}`),
+    warn: (message) => calls.push(`warn:${message}`),
+  });
+
+  logger.warn(
+    'Autowire: file has export default declaration but no runtime default export: Contract.ts',
+  );
+  logger.warn(
+    "Autowire: failed to create definition for HttpClient: Cannot read properties of undefined (reading 'body')",
+  );
+  logger.warn('Autowire: could not resolve dependency "Repository"');
+  logger.info('Autowire scan completed');
+  logger.debug('Autowire debug message');
+
+  assert.deepEqual(calls, [
+    'debug:Ignored Autowire: file has export default declaration but no runtime default export: Contract.ts',
+    "debug:Ignored Autowire: failed to create definition for HttpClient: Cannot read properties of undefined (reading 'body')",
+    'warn:Autowire: could not resolve dependency "Repository"',
+    'info:Autowire scan completed',
+    'debug:Autowire debug message',
+  ]);
+});
 
 test('resolves a concrete class registered in the container', async () => {
   const dependencyInjection = new DependencyInjection();
@@ -298,6 +333,36 @@ test('overrides unresolved argument references generated for external package im
   );
 });
 
+test('overrides unresolved argument references generated for kernel subpath imports', async () => {
+  class ServiceThatNeedsDomainEventPublisher {}
+
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    overrides: [
+      {
+        token: DomainEventPublisher,
+        useClass: MessageBus,
+      },
+    ],
+    servicesYamlPath: '/tmp/services.yaml',
+    sourceDirectory: process.cwd(),
+  });
+  const serviceId = serviceIdFor(ServiceThatNeedsDomainEventPublisher);
+  const externalReferenceId = Buffer.from(
+    'src__application____haskou__ddd-kernel__domain__DomainEventPublisher',
+  ).toString('base64');
+
+  dependencyInjection.container
+    .register(serviceId, ServiceThatNeedsDomainEventPublisher)
+    .addArgument(new Reference(externalReferenceId));
+  dependencyInjection.applyOverrides();
+  await dependencyInjection.container.compile();
+
+  assert.ok(
+    dependencyInjection.getService(externalReferenceId) instanceof MessageBus,
+  );
+});
+
 test('generates services.yaml', async () => {
   const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
   const sourceDirectory = temporaryDirectory;
@@ -324,6 +389,38 @@ test('generates services.yaml', async () => {
   const servicesYaml = await readFile(servicesYamlPath, 'utf8');
 
   assert.match(servicesYaml, /GeneratedRepository/);
+});
+
+test('ignores type-only default exports during autowire', async () => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const servicesYamlPath = path.join(
+    temporaryDirectory,
+    'config',
+    'container',
+    'services.yaml',
+  );
+  const warnings = [];
+
+  await writeFile(
+    path.join(temporaryDirectory, 'IgnoredContract.ts'),
+    'export default interface IgnoredContract {}\n',
+  );
+
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    servicesYamlPath,
+    sourceDirectory: temporaryDirectory,
+  });
+
+  dependencyInjection.container.logger = {
+    warn(message) {
+      warnings.push(String(message));
+    },
+  };
+
+  await dependencyInjection.compile();
+
+  assert.deepEqual(warnings, []);
 });
 
 test('reads services.yaml', async () => {
