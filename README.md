@@ -65,6 +65,9 @@ according to the source branch prefix:
 | `feat/*`      | Minor            |
 | `break/*`     | Major            |
 
+Renovate runtime dependency PRs use `renovate/*` branches. They publish a patch
+release only when the PR title starts with `fix(`.
+
 Other branch names run validation only and do not publish.
 
 ## License
