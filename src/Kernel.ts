@@ -1,8 +1,8 @@
 import dotenv, { type DotenvConfigOutput } from 'dotenv';
 import path from 'node:path';
 
-import type { Consumer } from './adapters/pubsub/index.js';
-import type { Route } from './adapters/ui/routes/index.js';
+import type { Consumer } from './adapters/pubsub/Consumer.js';
+import type { Route } from './adapters/ui/routes/Route.js';
 import type {
   ConsumerMiddleware,
   KernelLogger,
@@ -135,6 +135,20 @@ export class Kernel<
     }
   }
 
+  private static assertEnvironmentVariableChoice(
+    name: string,
+    value: KernelEnvironmentValue,
+    schema: KernelEnvironmentSchema,
+  ): void {
+    const choices = schema[name]?.choices;
+
+    if (choices && !choices.includes(value)) {
+      throw new KernelEnvironmentValidationError(
+        `Environment variable "${name}" must be one of: ${choices.join(', ')}.`,
+      );
+    }
+  }
+
   private static getEnvironmentVariablesPath(
     environment: string,
     options: KernelEnvironmentVariablesOptions<
@@ -193,12 +207,22 @@ export class Kernel<
     const definition = schema[name];
 
     if (definition.type === 'boolean') {
-      return Kernel.parseBooleanEnvironmentVariable(name, value);
+      const parsedValue = Kernel.parseBooleanEnvironmentVariable(name, value);
+
+      Kernel.assertEnvironmentVariableChoice(name, parsedValue, schema);
+
+      return parsedValue;
     }
 
     if (definition.type === 'number') {
-      return Kernel.parseNumberEnvironmentVariable(name, value);
+      const parsedValue = Kernel.parseNumberEnvironmentVariable(name, value);
+
+      Kernel.assertEnvironmentVariableChoice(name, parsedValue, schema);
+
+      return parsedValue;
     }
+
+    Kernel.assertEnvironmentVariableChoice(name, value, schema);
 
     return value;
   }

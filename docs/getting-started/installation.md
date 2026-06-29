@@ -11,9 +11,17 @@ injection and in-memory adapters.
 
 Install extra packages only for the adapters your application imports.
 
+The core package does not load optional adapter dependencies from the root
+import. Install the peer packages listed below only when importing the matching
+subpath.
+
 ## Pub/Sub Adapters
 
 The in-memory pub/sub adapter has no extra runtime dependencies.
+
+```ts
+import { InMemoryPubSub } from '@haskou/ddd-kernel/adapters/pubsub/in-memory';
+```
 
 The AMQP adapter uses `amqplib`:
 
@@ -21,14 +29,26 @@ The AMQP adapter uses `amqplib`:
 yarn add amqplib
 ```
 
+```ts
+import { AmqpMessageBusAdapter } from '@haskou/ddd-kernel/adapters/pubsub/amqp';
+```
+
 ## DB Adapters
 
 The in-memory repository adapter has no extra runtime dependencies.
+
+```ts
+import { InMemoryRepository } from '@haskou/ddd-kernel/adapters/db/in-memory';
+```
 
 The MongoDB repository adapter uses `mongodb`:
 
 ```bash
 yarn add mongodb
+```
+
+```ts
+import { MongoRepository } from '@haskou/ddd-kernel/adapters/db/mongo';
 ```
 
 ## UI Adapters
@@ -38,6 +58,10 @@ metadata packages:
 
 ```bash
 yarn add express routing-controllers reflect-metadata class-transformer class-validator
+```
+
+```ts
+import { ExpressKernelServer } from '@haskou/ddd-kernel/adapters/ui/express';
 ```
 
 Install `cors` only when enabling `routingControllersOptions.cors`:

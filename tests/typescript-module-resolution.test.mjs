@@ -39,8 +39,18 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
       import type { MessageBus, PublisherHook } from '@haskou/ddd-kernel/contracts/pubsub';
       import type { DomainMessageBus } from '@haskou/ddd-kernel/domain';
       import type { SchedulerErrorPolicy } from '@haskou/ddd-kernel/scheduler';
+      import Kernel from '@haskou/ddd-kernel';
       import { ExpressKernelServer } from '@haskou/ddd-kernel/adapters/ui/express';
 
+      const environmentSchema = {
+        ENABLE_JOBS: { choices: [true, false], type: 'boolean' },
+        HTTP_PORT: { choices: [3000, 3001], type: 'number' },
+        NODE_ENV: { choices: ['local', 'test'], type: 'string' },
+      } as const;
+      const kernel = new Kernel({ environmentSchema });
+      const nodeEnvironment: 'local' | 'test' | undefined = kernel.environment.NODE_ENV;
+      const httpPort: 3000 | 3001 | undefined = kernel.environment.HTTP_PORT;
+      const enableJobs: true | false | undefined = kernel.environment.ENABLE_JOBS;
       const middleware: ConsumerMiddleware | undefined = undefined;
       const messageBus: MessageBus | undefined = undefined;
       const domainMessageBus: DomainMessageBus | undefined = undefined;
@@ -51,6 +61,9 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
       void messageBus;
       void domainMessageBus;
       void hook;
+      void nodeEnvironment;
+      void httpPort;
+      void enableJobs;
       void policy;
       void ExpressKernelServer;
     `,
