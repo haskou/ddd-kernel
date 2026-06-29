@@ -84,9 +84,14 @@ creating the kernel:
 
 ```ts
 const environmentSchema = {
-  ENABLE_JOBS: { defaultValue: false, type: 'boolean' },
+  ENABLE_JOBS: {
+    defaultValue: false,
+    description: 'Enables background schedulers.',
+    type: 'boolean',
+  },
   HTTP_PORT: { required: true, type: 'number' },
-  SERVICE_NAME: { type: 'string' },
+  NODE_ENV: { choices: ['local', 'test', 'production'], type: 'string' },
+  SERVICE_NAME: { sensitive: false, type: 'string' },
 } as const;
 
 const kernel = new Kernel({ environmentSchema });
@@ -95,12 +100,39 @@ kernel.loadEnvironmentVariables();
 
 kernel.environment.HTTP_PORT; // number
 kernel.environment.ENABLE_JOBS; // boolean
+kernel.environment.NODE_ENV; // 'local' | 'test' | 'production' | undefined
 kernel.environment.SERVICE_NAME; // string | undefined
 ```
 
 Required variables throw `KernelEnvironmentValidationError` when they are
 missing. `number` and `boolean` values are parsed after `.env` files are loaded.
 Boolean values accept `true`, `false`, `1`, `0`, `yes`, `no`, `on` and `off`.
+Blank numeric values are rejected instead of being coerced to `0`.
+
+`choices` restricts the allowed runtime values and narrows the TypeScript type
+when the schema is declared `as const`:
+
+```ts
+const environmentSchema = {
+  NODE_ENV: { choices: ['local', 'test'], type: 'string' },
+} as const;
+
+const kernel = new Kernel({ environmentSchema });
+
+kernel.environment.NODE_ENV; // 'local' | 'test' | undefined
+```
+
+Schema entries also accept metadata for generated documentation and operational
+tools:
+
+| Field          | Purpose                                                                 |
+| -------------- | ----------------------------------------------------------------------- |
+| `type`         | Runtime parser and TypeScript primitive: `string`, `number`, `boolean`. |
+| `required`     | Throws when the variable is missing.                                    |
+| `defaultValue` | Used when the variable is absent.                                       |
+| `choices`      | Restricts accepted values and narrows the inferred TypeScript type.     |
+| `description`  | Human-readable explanation for generated docs or audits.                |
+| `sensitive`    | Marks values that should not be logged or displayed by tooling.         |
 
 ## Dependency Injection
 
@@ -144,6 +176,26 @@ available for consumers and schedulers:
 kernel.registerConsumerInstances(consumer);
 kernel.registerSchedulerInstances(scheduler);
 ```
+
+`registerConsumers` accepts classes that implement the `KernelConsumer`
+contract. The provided pub/sub `Consumer` base class already implements it, but
+custom consumers can implement the contract directly when they do not need that
+adapter base class:
+
+```ts
+import type { KernelConsumer } from '@haskou/ddd-kernel/contracts/kernel';
+
+export default class CustomConsumer implements KernelConsumer {
+  public readonly queueName = 'custom.consumer';
+
+  public async init() {
+    // Subscribe to the transport and bind handlers here.
+  }
+}
+```
+
+`registerRoutes` accepts classes assignable to `KernelRoute`. The provided HTTP
+`Route` base class extends that contract.
 
 Runtimes and initializers are passed to their run methods as classes. Runtimes
 are resolved through DI, executed and automatically added to shutdown hooks.

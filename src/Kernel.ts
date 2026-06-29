@@ -1,11 +1,11 @@
 import dotenv, { type DotenvConfigOutput } from 'dotenv';
 import path from 'node:path';
 
-import type { Consumer } from './adapters/pubsub/index.js';
-import type { Route } from './adapters/ui/routes/index.js';
 import type {
   ConsumerMiddleware,
+  KernelConsumer,
   KernelLogger,
+  KernelRoute,
   ShutdownHook,
 } from './contracts/index.js';
 import type { ServiceClass } from './infrastructure/dependency-injection/index.js';
@@ -28,9 +28,11 @@ export type { KernelDefaultEnvironment } from './kernel/KernelDefaultEnvironment
 export type { KernelEnvironment } from './kernel/KernelEnvironment.js';
 export type { KernelEnvironmentForSchema } from './kernel/KernelEnvironmentForSchema.js';
 export type { KernelEnvironmentSchema } from './kernel/KernelEnvironmentSchema.js';
+export type { KernelEnvironmentSchemaInput } from './kernel/KernelEnvironmentSchemaInput.js';
 export type { KernelEnvironmentValue } from './kernel/KernelEnvironmentValue.js';
 export type { KernelEnvironmentVariableDefinition } from './kernel/KernelEnvironmentVariableDefinition.js';
 export type { KernelEnvironmentVariablePrimitive } from './kernel/KernelEnvironmentVariablePrimitive.js';
+export type { KernelEnvironmentVariableResolvedValue } from './kernel/KernelEnvironmentVariableResolvedValue.js';
 export type { KernelEnvironmentVariableType } from './kernel/KernelEnvironmentVariableType.js';
 export type { KernelEnvironmentVariablesOptions } from './kernel/KernelEnvironmentVariablesOptions.js';
 export type { KernelOptions } from './kernel/KernelOptions.js';
@@ -44,9 +46,9 @@ export class Kernel<
   );
 
   private readonly consumerMiddlewares: ConsumerMiddleware[] = [];
-  private readonly consumersList: Consumer[] = [];
+  private readonly consumersList: KernelConsumer[] = [];
   private readonly loggerInstance: KernelLogger;
-  private readonly routesList: ServiceClass<Route>[] = [];
+  private readonly routesList: ServiceClass<KernelRoute>[] = [];
   private readonly schedulersList: Scheduler[] = [];
   private readonly shutdownHooks: ShutdownHook[] = [];
   private dependencyInjectionInstance: DependencyInjection | undefined;
@@ -73,7 +75,7 @@ export class Kernel<
     return path.resolve(Kernel.rootDirectory, 'config');
   }
 
-  public static get consumers(): Consumer[] {
+  public static get consumers(): KernelConsumer[] {
     return Kernel.getActiveKernel().consumers;
   }
 
@@ -101,7 +103,7 @@ export class Kernel<
     return process.cwd();
   }
 
-  public static get routes(): ServiceClass<Route>[] {
+  public static get routes(): ServiceClass<KernelRoute>[] {
     return Kernel.getActiveKernel().routes;
   }
 
@@ -131,6 +133,20 @@ export class Kernel<
     if (schema[name]?.required === true && value === undefined) {
       throw new KernelEnvironmentValidationError(
         `Missing required environment variable "${name}".`,
+      );
+    }
+  }
+
+  private static assertEnvironmentVariableChoice(
+    name: string,
+    value: KernelEnvironmentValue,
+    schema: KernelEnvironmentSchema,
+  ): void {
+    const choices = schema[name]?.choices;
+
+    if (choices && !choices.includes(value)) {
+      throw new KernelEnvironmentValidationError(
+        `Environment variable "${name}" must be one of: ${choices.join(', ')}.`,
       );
     }
   }
@@ -193,12 +209,22 @@ export class Kernel<
     const definition = schema[name];
 
     if (definition.type === 'boolean') {
-      return Kernel.parseBooleanEnvironmentVariable(name, value);
+      const parsedValue = Kernel.parseBooleanEnvironmentVariable(name, value);
+
+      Kernel.assertEnvironmentVariableChoice(name, parsedValue, schema);
+
+      return parsedValue;
     }
 
     if (definition.type === 'number') {
-      return Kernel.parseNumberEnvironmentVariable(name, value);
+      const parsedValue = Kernel.parseNumberEnvironmentVariable(name, value);
+
+      Kernel.assertEnvironmentVariableChoice(name, parsedValue, schema);
+
+      return parsedValue;
     }
+
+    Kernel.assertEnvironmentVariableChoice(name, value, schema);
 
     return value;
   }
@@ -281,9 +307,9 @@ export class Kernel<
   }
 
   private getConsumerFromClass(
-    ClassDefinition: ServiceClass<Consumer>,
-  ): Consumer {
-    return this.di.getService<Consumer>(ClassDefinition);
+    ClassDefinition: ServiceClass<KernelConsumer>,
+  ): KernelConsumer {
+    return this.di.getService<KernelConsumer>(ClassDefinition);
   }
 
   private getInitializerFromClass(
@@ -302,7 +328,7 @@ export class Kernel<
     return this.di.getService<Scheduler>(ClassDefinition);
   }
 
-  public get consumers(): Consumer[] {
+  public get consumers(): KernelConsumer[] {
     return this.consumersList;
   }
 
@@ -326,7 +352,7 @@ export class Kernel<
     return this.loggerInstance;
   }
 
-  public get routes(): ServiceClass<Route>[] {
+  public get routes(): ServiceClass<KernelRoute>[] {
     return this.routesList;
   }
 
@@ -384,7 +410,7 @@ export class Kernel<
     return result;
   }
 
-  public getRoutes(): ServiceClass<Route>[] {
+  public getRoutes(): ServiceClass<KernelRoute>[] {
     return this.routes;
   }
 
@@ -395,18 +421,20 @@ export class Kernel<
   }
 
   public registerConsumers(
-    ...ClassDefinitions: ServiceClass<Consumer>[]
+    ...ClassDefinitions: ServiceClass<KernelConsumer>[]
   ): void {
     for (const ClassDefinition of ClassDefinitions) {
       this.consumersList.push(this.getConsumerFromClass(ClassDefinition));
     }
   }
 
-  public registerConsumerInstances(...consumers: Consumer[]): void {
+  public registerConsumerInstances(...consumers: KernelConsumer[]): void {
     this.consumersList.push(...consumers);
   }
 
-  public registerRoutes(...ClassDefinitions: ServiceClass<Route>[]): void {
+  public registerRoutes(
+    ...ClassDefinitions: ServiceClass<KernelRoute>[]
+  ): void {
     this.routesList.push(...ClassDefinitions);
   }
 

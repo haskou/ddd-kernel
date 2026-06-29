@@ -1,3 +1,4 @@
+import type { KernelConsumer } from '../../contracts/kernel/index.js';
 import type { DomainEventConsumer } from '../../domain/DomainEventConsumer.js';
 import type {
   DomainEvent,
@@ -7,7 +8,7 @@ import type {
 import { Kernel } from '../../Kernel.js';
 import { ConsumerMiddlewarePipeline } from './ConsumerMiddlewarePipeline.js';
 
-export abstract class Consumer {
+export abstract class Consumer implements KernelConsumer {
   constructor(private readonly consumer: DomainEventConsumer) {}
 
   private async runMiddleware(

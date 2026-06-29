@@ -14,13 +14,13 @@ Bootstrap code chooses adapters.
 
 ## Core
 
-| Area                   | Import                                    | Purpose                                                                                              |
-| ---------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Kernel runtime         | `@haskou/ddd-kernel`                      | Registers consumers, routes, schedulers, runtimes and shutdown hooks.                                |
-| Environment variables  | `@haskou/ddd-kernel`                      | Loads `.env.<environment>` files and exposes typed `kernel.environment` when a schema is configured. |
-| Dependency injection   | `@haskou/ddd-kernel/dependency-injection` | Wraps `node-dependency-injection` and container YAML generation/loading.                             |
-| Lifecycle              | `@haskou/ddd-kernel/lifecycle`            | Runtime and initializer contracts.                                                                   |
-| Kernel logger contract | `@haskou/ddd-kernel/contracts/kernel`     | `KernelLogger` interface.                                                                            |
+| Area                  | Import                                    | Purpose                                                                                              |
+| --------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Kernel runtime        | `@haskou/ddd-kernel`                      | Registers consumers, routes, schedulers, runtimes and shutdown hooks.                                |
+| Environment variables | `@haskou/ddd-kernel`                      | Loads `.env.<environment>` files and exposes typed `kernel.environment` when a schema is configured. |
+| Dependency injection  | `@haskou/ddd-kernel/dependency-injection` | Wraps `node-dependency-injection` and container YAML generation/loading.                             |
+| Lifecycle             | `@haskou/ddd-kernel/lifecycle`            | Runtime and initializer contracts.                                                                   |
+| Kernel contracts      | `@haskou/ddd-kernel/contracts/kernel`     | `KernelConsumer`, `KernelRoute`, `KernelLogger`, middleware and shutdown contracts.                  |
 
 `dotenv`, `node-dependency-injection` and `fs-extra` are package dependencies
 because the core environment and DI implementations use them directly.

@@ -35,22 +35,52 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
   await writeFile(
     path.join(temporaryDirectory, 'index.ts'),
     `
-      import type { ConsumerMiddleware } from '@haskou/ddd-kernel/contracts/kernel';
+      import type { ConsumerMiddleware, KernelConsumer, KernelRoute } from '@haskou/ddd-kernel/contracts/kernel';
       import type { MessageBus, PublisherHook } from '@haskou/ddd-kernel/contracts/pubsub';
       import type { DomainMessageBus } from '@haskou/ddd-kernel/domain';
       import type { SchedulerErrorPolicy } from '@haskou/ddd-kernel/scheduler';
+      import Kernel from '@haskou/ddd-kernel';
       import { ExpressKernelServer } from '@haskou/ddd-kernel/adapters/ui/express';
 
+      const environmentSchema = {
+        ENABLE_JOBS: { choices: [true, false], type: 'boolean' },
+        HTTP_PORT: { choices: [3000, 3001], type: 'number' },
+        NODE_ENV: { choices: ['local', 'test'], type: 'string' },
+      } as const;
+      const kernel = new Kernel({ environmentSchema });
+      class ArbitraryService {}
+      const nodeEnvironment: 'local' | 'test' | undefined = kernel.environment.NODE_ENV;
+      const httpPort: 3000 | 3001 | undefined = kernel.environment.HTTP_PORT;
+      const enableJobs: true | false | undefined = kernel.environment.ENABLE_JOBS;
+      const invalidNumberChoicesSchema = {
+        HTTP_PORT: { choices: ['3000'], type: 'number' },
+      } as const;
+      const invalidDefaultChoicesSchema = {
+        NODE_ENV: { choices: ['local', 'test'], defaultValue: 'production', type: 'string' },
+      } as const;
       const middleware: ConsumerMiddleware | undefined = undefined;
+      const kernelConsumer: KernelConsumer | undefined = undefined;
+      const kernelRoute: KernelRoute | undefined = undefined;
       const messageBus: MessageBus | undefined = undefined;
       const domainMessageBus: DomainMessageBus | undefined = undefined;
       const hook: PublisherHook | undefined = undefined;
       const policy: SchedulerErrorPolicy | undefined = undefined;
 
       void middleware;
+      void kernelConsumer;
+      void kernelRoute;
       void messageBus;
       void domainMessageBus;
       void hook;
+      void nodeEnvironment;
+      void httpPort;
+      void enableJobs;
+      // @ts-expect-error choices must match the declared environment variable type.
+      void new Kernel({ environmentSchema: invalidNumberChoicesSchema });
+      // @ts-expect-error defaultValue must be one of the declared choices.
+      void new Kernel({ environmentSchema: invalidDefaultChoicesSchema });
+      // @ts-expect-error registered routes must intentionally extend KernelRoute.
+      kernel.registerRoutes(ArbitraryService);
       void policy;
       void ExpressKernelServer;
     `,
