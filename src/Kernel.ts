@@ -31,6 +31,7 @@ export type { KernelEnvironmentSchema } from './kernel/KernelEnvironmentSchema.j
 export type { KernelEnvironmentValue } from './kernel/KernelEnvironmentValue.js';
 export type { KernelEnvironmentVariableDefinition } from './kernel/KernelEnvironmentVariableDefinition.js';
 export type { KernelEnvironmentVariablePrimitive } from './kernel/KernelEnvironmentVariablePrimitive.js';
+export type { KernelEnvironmentVariableResolvedValue } from './kernel/KernelEnvironmentVariableResolvedValue.js';
 export type { KernelEnvironmentVariableType } from './kernel/KernelEnvironmentVariableType.js';
 export type { KernelEnvironmentVariablesOptions } from './kernel/KernelEnvironmentVariablesOptions.js';
 export type { KernelOptions } from './kernel/KernelOptions.js';

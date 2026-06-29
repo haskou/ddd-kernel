@@ -51,6 +51,12 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
       const nodeEnvironment: 'local' | 'test' | undefined = kernel.environment.NODE_ENV;
       const httpPort: 3000 | 3001 | undefined = kernel.environment.HTTP_PORT;
       const enableJobs: true | false | undefined = kernel.environment.ENABLE_JOBS;
+      const invalidNumberChoicesSchema = {
+        HTTP_PORT: { choices: ['3000'], type: 'number' },
+      } as const;
+      const invalidDefaultChoicesSchema = {
+        NODE_ENV: { choices: ['local', 'test'], defaultValue: 'production', type: 'string' },
+      } as const;
       const middleware: ConsumerMiddleware | undefined = undefined;
       const kernelConsumer: KernelConsumer | undefined = undefined;
       const kernelRoute: KernelRoute | undefined = undefined;
@@ -68,6 +74,10 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
       void nodeEnvironment;
       void httpPort;
       void enableJobs;
+      // @ts-expect-error choices must match the declared environment variable type.
+      void new Kernel({ environmentSchema: invalidNumberChoicesSchema });
+      // @ts-expect-error defaultValue must be one of the declared choices.
+      void new Kernel({ environmentSchema: invalidDefaultChoicesSchema });
       void policy;
       void ExpressKernelServer;
     `,
