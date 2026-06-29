@@ -731,3 +731,72 @@ test('keeps typed string environment variables as strings', () => {
     }
   }
 });
+
+test('validates typed environment variable choices', () => {
+  const previousNodeEnvironment = process.env.NODE_ENV;
+  const previousHttpPort = process.env.HTTP_PORT;
+  const previousEnableJobs = process.env.ENABLE_JOBS;
+
+  process.env.NODE_ENV = 'test';
+  process.env.HTTP_PORT = '3000';
+  process.env.ENABLE_JOBS = 'false';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        ENABLE_JOBS: { choices: [true, false], type: 'boolean' },
+        HTTP_PORT: { choices: [3000, 3001], type: 'number' },
+        NODE_ENV: { choices: ['local', 'test'], type: 'string' },
+      },
+    });
+
+    kernel.loadEnvironmentVariables();
+
+    assert.equal(kernel.environment.NODE_ENV, 'test');
+    assert.equal(kernel.environment.HTTP_PORT, 3000);
+    assert.equal(kernel.environment.ENABLE_JOBS, false);
+  } finally {
+    if (previousNodeEnvironment === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = previousNodeEnvironment;
+    }
+
+    if (previousHttpPort === undefined) {
+      delete process.env.HTTP_PORT;
+    } else {
+      process.env.HTTP_PORT = previousHttpPort;
+    }
+
+    if (previousEnableJobs === undefined) {
+      delete process.env.ENABLE_JOBS;
+    } else {
+      process.env.ENABLE_JOBS = previousEnableJobs;
+    }
+  }
+});
+
+test('throws when typed environment variable choices do not match', () => {
+  const previousNodeEnvironment = process.env.NODE_ENV;
+
+  process.env.NODE_ENV = 'production';
+
+  try {
+    const kernel = new Kernel({
+      environmentSchema: {
+        NODE_ENV: { choices: ['local', 'test'], type: 'string' },
+      },
+    });
+
+    assert.throws(
+      () => kernel.loadEnvironmentVariables(),
+      /Environment variable "NODE_ENV" must be one of: local, test/,
+    );
+  } finally {
+    if (previousNodeEnvironment === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = previousNodeEnvironment;
+    }
+  }
+});
