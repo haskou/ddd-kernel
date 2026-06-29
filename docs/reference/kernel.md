@@ -177,6 +177,26 @@ kernel.registerConsumerInstances(consumer);
 kernel.registerSchedulerInstances(scheduler);
 ```
 
+`registerConsumers` accepts classes that implement the `KernelConsumer`
+contract. The provided pub/sub `Consumer` base class already implements it, but
+custom consumers can implement the contract directly when they do not need that
+adapter base class:
+
+```ts
+import type { KernelConsumer } from '@haskou/ddd-kernel/contracts/kernel';
+
+export default class CustomConsumer implements KernelConsumer {
+  public readonly queueName = 'custom.consumer';
+
+  public async init() {
+    // Subscribe to the transport and bind handlers here.
+  }
+}
+```
+
+`registerRoutes` accepts classes assignable to `KernelRoute`. The provided HTTP
+`Route` base class extends that contract.
+
 Runtimes and initializers are passed to their run methods as classes. Runtimes
 are resolved through DI, executed and automatically added to shutdown hooks.
 When an object is already built outside the kernel, register the shutdown action

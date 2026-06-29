@@ -35,7 +35,7 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
   await writeFile(
     path.join(temporaryDirectory, 'index.ts'),
     `
-      import type { ConsumerMiddleware } from '@haskou/ddd-kernel/contracts/kernel';
+      import type { ConsumerMiddleware, KernelConsumer, KernelRoute } from '@haskou/ddd-kernel/contracts/kernel';
       import type { MessageBus, PublisherHook } from '@haskou/ddd-kernel/contracts/pubsub';
       import type { DomainMessageBus } from '@haskou/ddd-kernel/domain';
       import type { SchedulerErrorPolicy } from '@haskou/ddd-kernel/scheduler';
@@ -52,12 +52,16 @@ test('exports types for TypeScript moduleResolution node consumers', async () =>
       const httpPort: 3000 | 3001 | undefined = kernel.environment.HTTP_PORT;
       const enableJobs: true | false | undefined = kernel.environment.ENABLE_JOBS;
       const middleware: ConsumerMiddleware | undefined = undefined;
+      const kernelConsumer: KernelConsumer | undefined = undefined;
+      const kernelRoute: KernelRoute | undefined = undefined;
       const messageBus: MessageBus | undefined = undefined;
       const domainMessageBus: DomainMessageBus | undefined = undefined;
       const hook: PublisherHook | undefined = undefined;
       const policy: SchedulerErrorPolicy | undefined = undefined;
 
       void middleware;
+      void kernelConsumer;
+      void kernelRoute;
       void messageBus;
       void domainMessageBus;
       void hook;

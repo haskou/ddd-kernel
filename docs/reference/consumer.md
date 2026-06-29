@@ -18,6 +18,10 @@ Consumers are registered by class:
 kernel.registerConsumers(RegisterUserWhenCreated);
 ```
 
+`Consumer` implements the core `KernelConsumer` contract. The kernel only
+requires `queueName` and `init()`, so a custom transport can provide its own
+consumer class without extending this adapter base class.
+
 ## Middleware
 
 Register consumer middleware when you need idempotency, retries, tracing or
