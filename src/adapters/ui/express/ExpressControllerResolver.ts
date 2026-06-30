@@ -44,11 +44,12 @@ export class ExpressControllerResolver {
   }
 
   public get(ClassDefinition: ExpressController): unknown {
-    if (
-      this.isKnownController(ClassDefinition) &&
-      !this.canResolveService(ClassDefinition)
-    ) {
-      return this.getCachedController(ClassDefinition);
+    if (!this.canResolveService(ClassDefinition)) {
+      if (this.isKnownController(ClassDefinition)) {
+        return this.getCachedController(ClassDefinition);
+      }
+
+      return undefined;
     }
 
     return this.kernel.di.getService(ClassDefinition);

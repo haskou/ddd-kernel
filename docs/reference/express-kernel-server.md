@@ -52,6 +52,9 @@ dependencies, broken factories and other container failures remain visible.
 Custom kernels or test doubles should expose `di.hasService()` when they need
 registered controllers to resolve through DI. Without that optional lookup,
 known controllers are treated as external controllers and constructed locally.
+Classes requested by `routing-controllers` that are not known controllers, such
+as plain middleware or interceptor classes, keep the normal `routing-controllers`
+fallback when they are not registered in DI.
 
 The same can be done after construction:
 

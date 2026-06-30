@@ -8,7 +8,12 @@ import {
 } from '../../../../dist/adapters/ui/express/index.js';
 import { Kernel } from '../../../../dist/index.js';
 import { DependencyInjection } from '../../../../dist/infrastructure/dependency-injection/index.js';
-import { Get, JsonController } from 'routing-controllers';
+import {
+  Get,
+  JsonController,
+  Middleware,
+  getMetadataArgsStorage,
+} from 'routing-controllers';
 
 const getServerPort = (server) => {
   const address = server.server.address();
@@ -32,6 +37,29 @@ const createKernelWithServiceResolver = ({ getService, hasService }) => ({
 const decorateGetController = (Controller, route, methodName) => {
   JsonController(route)(Controller);
   Get('/')(Controller.prototype, methodName);
+};
+
+const removeRoutingControllerMetadata = (ClassDefinition) => {
+  const storage = getMetadataArgsStorage();
+  const doesNotTargetClass = (metadata) =>
+    metadata.target !== ClassDefinition &&
+    metadata.object?.constructor !== ClassDefinition;
+
+  storage.actions = storage.actions.filter(doesNotTargetClass);
+  storage.controllers = storage.controllers.filter(doesNotTargetClass);
+  storage.params = storage.params.filter(doesNotTargetClass);
+  storage.responseHandlers =
+    storage.responseHandlers.filter(doesNotTargetClass);
+  storage.uses = storage.uses.filter(doesNotTargetClass);
+  storage.useInterceptors = storage.useInterceptors.filter(doesNotTargetClass);
+};
+
+const removeRoutingMiddlewareMetadata = (ClassDefinition) => {
+  const storage = getMetadataArgsStorage();
+
+  storage.middlewares = storage.middlewares.filter(
+    (metadata) => metadata.target !== ClassDefinition,
+  );
 };
 
 test('resolves known controllers locally when they are not registered in DI', () => {
@@ -117,20 +145,45 @@ test('does not write container warnings for known external controllers missing f
   assert.deepEqual(warnings, []);
 });
 
-test('rethrows missing services that are not known controllers', () => {
+test('returns undefined for missing services that are not known controllers', () => {
   class MissingService {}
 
+  const calls = [];
+  const kernel = createKernelWithServiceResolver({
+    getService: (ClassDefinition) => {
+      calls.push(['getService', ClassDefinition.name]);
+
+      throw new ServiceNotFoundException(
+        `The service ${ClassDefinition.name} is not registered`,
+      );
+    },
+    hasService: (ClassDefinition) => {
+      calls.push(['hasService', ClassDefinition.name]);
+
+      return false;
+    },
+  });
+  const resolver = new ExpressControllerResolver(kernel, []);
+
+  assert.equal(resolver.get(MissingService), undefined);
+  assert.deepEqual(calls, [['hasService', 'MissingService']]);
+});
+
+test('rethrows registered service resolution errors that are not controllers', () => {
+  class RegisteredService {}
+
   const error = new ServiceNotFoundException(
-    'The service MissingService is not registered',
+    'The service ServiceDependency is not registered',
   );
   const kernel = createKernelWithServiceResolver({
     getService: () => {
       throw error;
     },
+    hasService: () => true,
   });
   const resolver = new ExpressControllerResolver(kernel, []);
 
-  assert.throws(() => resolver.get(MissingService), error);
+  assert.throws(() => resolver.get(RegisteredService), error);
 });
 
 test('rethrows dependency resolution errors for known controllers', () => {
@@ -195,6 +248,7 @@ test('runs external routing-controllers without requiring DI registration', asyn
     assert.deepEqual(warnings, []);
   } finally {
     await server.close();
+    removeRoutingControllerMetadata(ExternalHttpController);
   }
 });
 
@@ -249,6 +303,7 @@ test('runs kernel registered routes without requiring DI registration', async ()
     assert.deepEqual(warnings, []);
   } finally {
     await server.close();
+    removeRoutingControllerMetadata(KernelRouteController);
   }
 });
 
@@ -292,6 +347,86 @@ test('does not fallback to plain construction for registered controller dependen
     assert.equal(body.name, 'ServiceNotFoundException');
   } finally {
     await server.close();
+    removeRoutingControllerMetadata(RegisteredHttpController);
+  }
+});
+
+test('keeps routing-controllers fallback for plain middleware classes', async () => {
+  class MiddlewareHttpController {
+    index() {
+      return { middleware: true };
+    }
+  }
+
+  class PlainMiddleware {
+    use(request, response, next) {
+      void response;
+      request.middlewareWasCalled = true;
+      next();
+    }
+  }
+
+  decorateGetController(MiddlewareHttpController, '/middleware-http', 'index');
+  Middleware({ type: 'before' })(PlainMiddleware);
+
+  const calls = [];
+  const warnings = [];
+  const kernel = createKernelWithServiceResolver({
+    getService: (ClassDefinition) => {
+      calls.push(['getService', ClassDefinition.name]);
+      warnings.push(`The service ${ClassDefinition.name} is not registered`);
+
+      throw new ServiceNotFoundException(
+        `The service ${ClassDefinition.name} is not registered`,
+      );
+    },
+    hasService: (ClassDefinition) => {
+      calls.push(['hasService', ClassDefinition.name]);
+
+      return false;
+    },
+  });
+  const server = new ExpressKernelServer({
+    controllers: [MiddlewareHttpController],
+    kernel,
+    port: 0,
+    routingControllersOptions: {
+      middlewares: [PlainMiddleware],
+    },
+  });
+
+  await server.run();
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${getServerPort(server)}/middleware-http`,
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { middleware: true });
+    assert.equal(
+      calls.some(
+        ([method, service]) =>
+          method === 'hasService' && service === 'PlainMiddleware',
+      ),
+      true,
+    );
+    assert.equal(
+      calls.some(
+        ([method, service]) =>
+          method === 'hasService' && service === 'MiddlewareHttpController',
+      ),
+      true,
+    );
+    assert.equal(
+      calls.some(([method]) => method === 'getService'),
+      false,
+    );
+    assert.deepEqual(warnings, []);
+  } finally {
+    await server.close();
+    removeRoutingControllerMetadata(MiddlewareHttpController);
+    removeRoutingMiddlewareMetadata(PlainMiddleware);
   }
 });
 
