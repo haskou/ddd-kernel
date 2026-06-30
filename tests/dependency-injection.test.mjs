@@ -70,6 +70,7 @@ test('resolves a concrete class registered in the container', async () => {
 
   const service = dependencyInjection.getService(ConcreteService);
 
+  assert.equal(dependencyInjection.hasService(ConcreteService), true);
   assert.ok(service instanceof ConcreteService);
 });
 
@@ -90,6 +91,7 @@ test('resolves an abstract parent to its concrete implementation', async () => {
 
   const repository = dependencyInjection.getService(ContractRepository);
 
+  assert.equal(dependencyInjection.hasService(ContractRepository), true);
   assert.ok(repository instanceof ConcreteRepository);
 });
 
@@ -105,6 +107,7 @@ test('resolves an alias to its target implementation', async () => {
 
   const repository = dependencyInjection.getService(AliasRepository);
 
+  assert.equal(dependencyInjection.hasService(AliasRepository), true);
   assert.ok(repository instanceof ConcreteRepository);
 });
 
@@ -140,6 +143,7 @@ test('overrides an abstract parent with another registered implementation', asyn
 
   const repository = dependencyInjection.getService(ContractRepository);
 
+  assert.equal(dependencyInjection.hasService(ContractRepository), true);
   assert.ok(repository instanceof InMemoryRepository);
 });
 
@@ -169,6 +173,7 @@ test('overrides a service with a value instance', async () => {
   dependencyInjection.applyOverrides();
   await dependencyInjection.container.compile();
 
+  assert.equal(dependencyInjection.hasService(ContractRepository), true);
   assert.equal(dependencyInjection.getService(ContractRepository), repository);
 });
 
@@ -198,6 +203,7 @@ test('overrides a service with a factory result', async () => {
   dependencyInjection.applyOverrides();
   await dependencyInjection.container.compile();
 
+  assert.equal(dependencyInjection.hasService(ContractRepository), true);
   assert.equal(dependencyInjection.getService(ContractRepository), repository);
 });
 
@@ -483,6 +489,15 @@ test('throws when singleton instance is requested before configuration', () => {
   }
 });
 
+test('reports missing services without resolving them', () => {
+  class MissingService {}
+
+  const dependencyInjection = new DependencyInjection();
+
+  assert.equal(dependencyInjection.hasService(MissingService), false);
+  assert.equal(dependencyInjection.hasService('missing-service'), false);
+});
+
 test('returns the configured singleton instance', () => {
   const dependencyInjection = DependencyInjection.configure({
     containerBuild: true,
@@ -536,6 +551,7 @@ test('falls back to literal container ids when service name is not a class', asy
   dependencyInjection.registerParentAliases();
   await dependencyInjection.container.compile();
 
+  assert.equal(dependencyInjection.hasService('literal-service'), true);
   assert.ok(
     dependencyInjection.getService('literal-service') instanceof LiteralService,
   );

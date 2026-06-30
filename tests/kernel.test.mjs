@@ -119,6 +119,7 @@ test('resolves classes through DI registration methods and clears registrations'
     di: {
       compile: async () => calls.push('di:compile'),
       getService: (ClassDefinition) => services.get(ClassDefinition),
+      hasService: (ClassDefinition) => services.has(ClassDefinition),
     },
   });
 
@@ -174,6 +175,7 @@ test('keeps the instance kernel active after dependency injection', async () => 
         new Kernel();
       },
       getService: () => undefined,
+      hasService: () => false,
     },
   });
 

@@ -36,6 +36,23 @@ const server = new ExpressKernelServer({
 `controllers` are merged with `kernel.getRoutes()` before
 `routing-controllers` is configured.
 
+Controllers passed through `controllers`, `registerControllers()` or
+`kernel.registerRoutes()` are known to the Express adapter. When
+`routing-controllers` asks for one of those classes, `ExpressKernelServer` first
+checks the kernel container without resolving the service. If the class itself is
+not registered, the adapter creates and caches a plain controller instance
+instead of forcing every external controller to be a DI service.
+
+That avoids the “service is not registered” warning that
+`node-dependency-injection` emits when a missing service is resolved directly.
+Registered controllers still resolve through DI. Dependency errors raised while
+resolving a registered controller are rethrown, so missing constructor
+dependencies, broken factories and other container failures remain visible.
+
+Custom kernels or test doubles should expose `di.hasService()` when they need
+registered controllers to resolve through DI. Without that optional lookup,
+known controllers are treated as external controllers and constructed locally.
+
 The same can be done after construction:
 
 ```ts
