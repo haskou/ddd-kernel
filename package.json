@@ -1,6 +1,6 @@
 {
   "name": "@haskou/ddd-kernel",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Framework-agnostic DDD kernel for TypeScript applications and microservices.",
   "type": "module",
   "main": "./dist/index.cjs",
