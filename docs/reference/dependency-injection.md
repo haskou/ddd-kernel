@@ -42,6 +42,19 @@ The generated container follows the project convention: one default-exported
 class per file. Application classes should receive dependencies through their
 constructor.
 
+## Service Lookup
+
+Use `getService()` when a service must exist:
+
+```ts
+const repository = kernel.di.getService(UserRepository);
+```
+
+Use `hasService()` when an adapter needs to check whether a token is registered
+without resolving it. This does not call the underlying container `get()` method,
+so missing services can be detected without emitting
+`node-dependency-injection` “service is not registered” warnings.
+
 ## Overrides
 
 Use dependency overrides when the application wants a different implementation

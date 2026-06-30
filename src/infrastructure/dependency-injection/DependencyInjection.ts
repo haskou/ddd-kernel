@@ -79,6 +79,13 @@ export class DependencyInjection implements ServiceResolver {
     return `ddd-kernel.override.${prefix}.${tokenName}`;
   }
 
+  private hasDirectService(serviceName: unknown): boolean {
+    return (
+      typeof serviceName === 'string' &&
+      (this.definitions.has(serviceName) || this.aliases.has(serviceName))
+    );
+  }
+
   private ensureSyntheticService(id: string, value: unknown): void {
     const definition = this.container.register(id);
 
@@ -364,6 +371,16 @@ export class DependencyInjection implements ServiceResolver {
     }
 
     return this.container.get<T>(serviceName);
+  }
+
+  public hasService(serviceName: unknown): boolean {
+    return (
+      this.overrideTokenIds.has(serviceName) ||
+      this.findAliasServiceId(serviceName) !== undefined ||
+      this.findConcreteChildServiceId(serviceName) !== undefined ||
+      this.findRegisteredServiceId(serviceName) !== undefined ||
+      this.hasDirectService(serviceName)
+    );
   }
 }
 

@@ -2,6 +2,7 @@ export * from './ErrorExplanation.js';
 export * from './ErrorResponseHandler.js';
 export * from './ExpressAppHook.js';
 export * from './ExpressController.js';
+export * from './ExpressControllerResolver.js';
 export * from './ExpressHookPhase.js';
 export * from './ExpressKernelServer.js';
 export * from './ExpressKernelServerOptions.js';

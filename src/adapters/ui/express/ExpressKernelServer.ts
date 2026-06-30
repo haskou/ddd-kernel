@@ -10,6 +10,8 @@ import type { ExpressPhaseHook } from './ExpressPhaseHook.js';
 import type { HttpApp } from './HttpApp.js';
 import type { HttpServer } from './HttpServer.js';
 
+import { ExpressControllerResolver } from './ExpressControllerResolver.js';
+
 export class ExpressKernelServer {
   private readonly applicationRequire = createRequire(
     path.resolve(process.cwd(), 'package.json'),
@@ -58,18 +60,23 @@ export class ExpressKernelServer {
     return [...(items ?? [])];
   }
 
-  private configureControllerContainer(): void {
+  private configureControllerContainer(
+    controllers: readonly ExpressController[],
+  ): void {
     const { useContainer } = this.getRoutingControllers();
+    const resolver = new ExpressControllerResolver(
+      this.options.kernel,
+      controllers,
+    );
 
     useContainer(
       {
-        /* c8 ignore next */
-        get: (ClassDefinition: ExpressController) =>
-          this.options.kernel.di.getService(ClassDefinition),
+        get: <T>(ClassDefinition: new (...args: never[]) => T): T =>
+          resolver.get(ClassDefinition as unknown as ExpressController) as T,
       },
       {
         fallback: true,
-        fallbackOnErrors: true,
+        fallbackOnErrors: false,
       },
     );
   }
@@ -101,8 +108,13 @@ export class ExpressKernelServer {
 
   private defaultErrorHandler(): ErrorRequestHandler {
     return (error, request, response, next) => {
-      void next;
       void request;
+
+      if (response.headersSent) {
+        next(error);
+
+        return;
+      }
 
       response.status(500).json({
         error: error instanceof Error ? error.message : String(error),
@@ -250,10 +262,10 @@ export class ExpressKernelServer {
       throw new Error('HTTP server is already running.');
     }
 
-    const controllers = [
+    const controllers: ExpressController[] = [
       ...this.options.kernel.getRoutes(),
       ...this.controllers,
-    ];
+    ] as ExpressController[];
     const express = this.getExpress();
     const { useExpressServer } = this.getRoutingControllers();
     const app = express() as HttpApp;
@@ -262,7 +274,7 @@ export class ExpressKernelServer {
     this.applyMiddlewares(app, this.preControllerMiddlewares);
     await this.runHooks(this.beforeControllersHooks, app);
     await this.runPhaseHooks('beforeControllers', app);
-    this.configureControllerContainer();
+    this.configureControllerContainer(controllers);
     useExpressServer(app, {
       ...this.options.routingControllersOptions,
       controllers,
