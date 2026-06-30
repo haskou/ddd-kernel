@@ -257,7 +257,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "fs-extra": "^11.3.6",
-    "node-dependency-injection": "3.8.0"
+    "node-dependency-injection": "4.2.0"
   },
   "devDependencies": {
     "@haskou/eslint-config": "^0.2.1",
