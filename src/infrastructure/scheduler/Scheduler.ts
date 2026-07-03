@@ -1,3 +1,4 @@
+import { Flow, Semaphore } from '@haskou/flow';
 import cron from 'node-cron';
 
 import type { CronExpression } from './CronExpression.js';
@@ -8,6 +9,8 @@ import { DefaultSchedulerErrorPolicy } from './DefaultSchedulerErrorPolicy.js';
 import { InvalidParseCronExpressionError } from './InvalidParseCronExpressionError.js';
 
 export abstract class Scheduler {
+  private readonly executionSemaphore = new Semaphore(1);
+
   constructor(
     private readonly errorPolicy: SchedulerErrorPolicy = new DefaultSchedulerErrorPolicy(),
   ) {}
@@ -35,7 +38,10 @@ export abstract class Scheduler {
   public async runOnce(): Promise<void> {
     try {
       Kernel.logger?.debug?.(`Scheduler: Executing ${this.getProcessName()}`);
-      await this.execute();
+      await new Flow()
+        .task(() => this.execute())
+        .limit(this.executionSemaphore)
+        .run();
     } catch (error: unknown) {
       if (this.errorPolicy.shouldSkip(error)) {
         return;

@@ -51,6 +51,50 @@ test('runs the scheduler once and logs debug information', async () => {
   ]);
 });
 
+test('serializes overlapping scheduler executions', async () => {
+  let activeExecutions = 0;
+  let executionCount = 0;
+  let maxActiveExecutions = 0;
+  let resolveFirstExecution;
+  let resolveFirstStarted;
+  const firstExecution = new Promise((resolve) => {
+    resolveFirstExecution = resolve;
+  });
+  const firstStarted = new Promise((resolve) => {
+    resolveFirstStarted = resolve;
+  });
+  const scheduler = new (class extends TestScheduler {
+    async execute() {
+      executionCount++;
+      activeExecutions++;
+      maxActiveExecutions = Math.max(maxActiveExecutions, activeExecutions);
+
+      if (executionCount === 1) {
+        resolveFirstStarted();
+        await firstExecution;
+      }
+
+      activeExecutions--;
+    }
+  })();
+
+  const firstRun = scheduler.runOnce();
+  await firstStarted;
+
+  const secondRun = scheduler.runOnce();
+  await Promise.resolve();
+
+  assert.equal(executionCount, 1);
+  assert.equal(maxActiveExecutions, 1);
+
+  resolveFirstExecution();
+  await Promise.all([firstRun, secondRun]);
+
+  assert.equal(executionCount, 2);
+  assert.equal(maxActiveExecutions, 1);
+  assert.equal(activeExecutions, 0);
+});
+
 test('delegates handled execution errors to the configured policy', async () => {
   const error = new Error('failed');
   const calls = [];

@@ -255,6 +255,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@haskou/flow": "0.1.2",
     "dotenv": "^17.4.2",
     "fs-extra": "^11.3.6",
     "node-dependency-injection": "3.8.0"
