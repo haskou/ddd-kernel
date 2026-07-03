@@ -36,18 +36,23 @@ export abstract class Scheduler {
   public abstract getProcessName(): string;
 
   public async runOnce(): Promise<void> {
+    const permit = this.executionSemaphore.tryAcquire();
+
+    if (permit === null) {
+      return;
+    }
+
     try {
       Kernel.logger?.debug?.(`Scheduler: Executing ${this.getProcessName()}`);
-      await new Flow()
-        .task(() => this.execute())
-        .limit(this.executionSemaphore)
-        .run();
+      await new Flow().task(() => this.execute()).run();
     } catch (error: unknown) {
       if (this.errorPolicy.shouldSkip(error)) {
         return;
       }
 
       await this.errorPolicy.handle(error, this);
+    } finally {
+      permit.release();
     }
   }
 

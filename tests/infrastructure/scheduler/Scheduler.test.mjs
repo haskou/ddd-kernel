@@ -51,7 +51,7 @@ test('runs the scheduler once and logs debug information', async () => {
   ]);
 });
 
-test('serializes overlapping scheduler executions', async () => {
+test('skips overlapping scheduler executions', async () => {
   let activeExecutions = 0;
   let executionCount = 0;
   let maxActiveExecutions = 0;
@@ -84,13 +84,14 @@ test('serializes overlapping scheduler executions', async () => {
   const secondRun = scheduler.runOnce();
   await Promise.resolve();
 
+  await secondRun;
   assert.equal(executionCount, 1);
   assert.equal(maxActiveExecutions, 1);
 
   resolveFirstExecution();
-  await Promise.all([firstRun, secondRun]);
+  await firstRun;
 
-  assert.equal(executionCount, 2);
+  assert.equal(executionCount, 1);
   assert.equal(maxActiveExecutions, 1);
   assert.equal(activeExecutions, 0);
 });
