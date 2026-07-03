@@ -552,10 +552,10 @@
     eslint-plugin-unused-imports "^4.4.1"
     globals "^17.7.0"
 
-"@haskou/flow@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@haskou/flow/-/flow-2.0.0.tgz#18f6cad9c715f9b95c83803c200e7a9bdc5d6bea"
-  integrity sha512-YccL9qOcX1y9M/m/B92h05HH0Wo2rbtXcPVJ7H4VpHjCbV/GzO9eC1FfyXoPYvIiiWomWu/W6GOI7J1yXZW5sA==
+"@haskou/flow@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@haskou/flow/-/flow-2.0.1.tgz#751a4a5ad7ef49de8dcffb26ba057889f02e59bf"
+  integrity sha512-s9bDL6sRJd6PYmnrqlv/nzghuZ9MWx3VilqZ/m/1WO20XXvPsA/Q2naFZ9AgKzqj96gQgC0xLSIMPiR005b93g==
   dependencies:
     "@haskou/value-objects" "^2.13.1"
 
