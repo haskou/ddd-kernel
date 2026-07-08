@@ -265,7 +265,7 @@
     "@types/amqplib": "^0.10.8",
     "@types/express": "^5.0.6",
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^26.1.0",
+    "@types/node": "^26.1.1",
     "@types/ws": "^8.18.1",
     "amqplib": "^2.0.1",
     "c8": "^11.0.0",
