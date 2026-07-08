@@ -143,11 +143,19 @@
   integrity sha512-Waj1cwPXJDucOib4a3bAISsKJVb15MKi9IvmTI/7ssVEm6sywXGjVJDhl6/umt1pK1ZS7PacXU3A1PmFKHEZ2w==
 
 "@haskou/ddd-kernel@file:..":
-  version "2.0.3"
+  version "2.0.6"
   dependencies:
+    "@haskou/flow" "2.0.1"
     dotenv "^17.4.2"
     fs-extra "^11.3.6"
     node-dependency-injection "3.8.0"
+
+"@haskou/flow@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@haskou/flow/-/flow-2.0.1.tgz#751a4a5ad7ef49de8dcffb26ba057889f02e59bf"
+  integrity sha512-s9bDL6sRJd6PYmnrqlv/nzghuZ9MWx3VilqZ/m/1WO20XXvPsA/Q2naFZ9AgKzqj96gQgC0xLSIMPiR005b93g==
+  dependencies:
+    "@haskou/value-objects" "^2.13.1"
 
 "@haskou/value-objects@^2.13.1":
   version "2.13.1"
@@ -223,10 +231,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@types/node@^26.1.0":
-  version "26.1.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.1.0.tgz#aa85f0727fc5611347091c478341c63650903439"
-  integrity sha512-O0A1G3xPGy4w7AgQdAQYUlQ+BKk2Oovw8eRpofyp5KdBZULnbe+WqaOVNrm705SHphCiG4XHsACrSmPu1f+Kgw==
+"@types/node@^26.1.1":
+  version "26.1.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.1.1.tgz#bad758d601e97d6cf457d204ee76a35fce7bd119"
+  integrity sha512-nxAkRSVkN1Y0JC1W8ky/fTfkGsMmcrRsbx+3XoZE+rMOX71kLYTV7fLXpqud1GpbpP5TuffXFqfX7fH2GgZREw==
   dependencies:
     undici-types "~8.3.0"
 
