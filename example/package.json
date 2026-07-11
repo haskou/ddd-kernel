@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@haskou/ddd-kernel": "file:..",
-    "@haskou/value-objects": "^2.13.1",
+    "@haskou/value-objects": "^3.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "express": "5.2.1",
