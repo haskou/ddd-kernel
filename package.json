@@ -292,7 +292,7 @@
     "class-validator": "^0.15.1",
     "cors": "^2.8.6",
     "express": "5.2.1",
-    "mongodb": "^7.4.0",
+    "mongodb": "^7.5.0",
     "node-cron": "^4.5.0",
     "reflect-metadata": "^0.2.2",
     "routing-controllers": "^0.11.3",
