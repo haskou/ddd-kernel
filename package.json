@@ -268,7 +268,7 @@
     "@types/node": "^26.1.1",
     "@types/ws": "^8.18.1",
     "amqplib": "^2.0.1",
-    "c8": "^11.0.0",
+    "c8": "^12.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "cors": "^2.8.6",
