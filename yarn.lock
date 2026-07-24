@@ -3283,10 +3283,10 @@ node-cron@^4.6.0:
   resolved "https://registry.yarnpkg.com/node-cron/-/node-cron-4.6.0.tgz#5c854d4aeebade26cf6df79a795e8a4bae47583f"
   integrity sha512-Si/bzYiKRHOB8/a99T2+SDGN582ONDMSTlJr5oCkT6GtnqPjZ2s10eoQRYkW9ZHwjVxONL+W8Fb+qR0AHMQsdg==
 
-node-dependency-injection@3.8.0:
-  version "3.8.0"
-  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-3.8.0.tgz#ddd48b404dff0aae6b2e235077798b44d20dafbe"
-  integrity sha512-uktk6PCTu0fGq/ISnwYdXVb3RHzIOGZIkUagcRjVtQ2W7vvLUlyZfd6CZC27NjIWxybiTL95Ji+LAAvVzpCcPQ==
+node-dependency-injection@4.2.2:
+  version "4.2.2"
+  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-4.2.2.tgz#36356150fd6c7c2ffc8826ab3461d5912ce00a0d"
+  integrity sha512-SszkOYAdp7Lp5sbVoOki/IyLStM9r+/a9VZ4XuoejDv3ny6qCxTWejUivNYWmzOmo/amAZvMcWMMFZZI4FVQHA==
   dependencies:
     "@babel/runtime" "^7.26.10"
     "@typescript-eslint/typescript-estree" "^5.23.0"
