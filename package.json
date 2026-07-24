@@ -258,7 +258,7 @@
     "@haskou/flow": "2.0.1",
     "dotenv": "^17.4.2",
     "fs-extra": "^11.4.0",
-    "node-dependency-injection": "3.8.0"
+    "node-dependency-injection": "4.2.2"
   },
   "devDependencies": {
     "@haskou/eslint-config": "^0.2.1",

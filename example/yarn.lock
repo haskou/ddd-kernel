@@ -148,7 +148,7 @@
     "@haskou/flow" "2.0.1"
     dotenv "^17.4.2"
     fs-extra "^11.4.0"
-    node-dependency-injection "3.8.0"
+    node-dependency-injection "4.2.2"
 
 "@haskou/flow@2.0.1":
   version "2.0.1"
@@ -1286,10 +1286,10 @@ negotiator@^1.0.0:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-1.0.0.tgz#b6c91bb47172d69f93cfd7c357bbb529019b5f6a"
   integrity sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==
 
-node-dependency-injection@3.8.0:
-  version "3.8.0"
-  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-3.8.0.tgz#ddd48b404dff0aae6b2e235077798b44d20dafbe"
-  integrity sha512-uktk6PCTu0fGq/ISnwYdXVb3RHzIOGZIkUagcRjVtQ2W7vvLUlyZfd6CZC27NjIWxybiTL95Ji+LAAvVzpCcPQ==
+node-dependency-injection@4.2.2:
+  version "4.2.2"
+  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-4.2.2.tgz#36356150fd6c7c2ffc8826ab3461d5912ce00a0d"
+  integrity sha512-SszkOYAdp7Lp5sbVoOki/IyLStM9r+/a9VZ4XuoejDv3ny6qCxTWejUivNYWmzOmo/amAZvMcWMMFZZI4FVQHA==
   dependencies:
     "@babel/runtime" "^7.26.10"
     "@typescript-eslint/typescript-estree" "^5.23.0"
