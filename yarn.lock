@@ -2872,10 +2872,10 @@ joycon@^3.1.1:
   resolved "https://registry.yarnpkg.com/joycon/-/joycon-3.1.1.tgz#bce8596d6ae808f8b68168f5fc69280996894f03"
   integrity sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==
 
-js-yaml@^4.1.1:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.2.0.tgz#2bd9e85682dd91bd469afb809d816043b3d49524"
-  integrity sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==
+js-yaml@^4.3.2:
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.3.2.tgz#8e44fb14a2643c59726bb15787b5f1512cb3d3fb"
+  integrity sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==
   dependencies:
     argparse "^2.0.1"
 
@@ -3283,10 +3283,10 @@ node-cron@^4.6.0:
   resolved "https://registry.yarnpkg.com/node-cron/-/node-cron-4.6.0.tgz#5c854d4aeebade26cf6df79a795e8a4bae47583f"
   integrity sha512-Si/bzYiKRHOB8/a99T2+SDGN582ONDMSTlJr5oCkT6GtnqPjZ2s10eoQRYkW9ZHwjVxONL+W8Fb+qR0AHMQsdg==
 
-node-dependency-injection@3.8.0:
-  version "3.8.0"
-  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-3.8.0.tgz#ddd48b404dff0aae6b2e235077798b44d20dafbe"
-  integrity sha512-uktk6PCTu0fGq/ISnwYdXVb3RHzIOGZIkUagcRjVtQ2W7vvLUlyZfd6CZC27NjIWxybiTL95Ji+LAAvVzpCcPQ==
+node-dependency-injection@4.3.0:
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-4.3.0.tgz#4db4050ef46f99845c820f39ca6d81df387a4044"
+  integrity sha512-lYVH619HP2OmXOmY4ondjhN/OmBDtZfHUZY4vE9+o9QxNFFAupi1fKflGEsq11Bt+iIiyfjwZ+dWgmk3HVONtg==
   dependencies:
     "@babel/runtime" "^7.26.10"
     "@typescript-eslint/typescript-estree" "^5.23.0"
@@ -3294,7 +3294,7 @@ node-dependency-injection@3.8.0:
     commander "^8.3.0"
     console.table "^0.10.0"
     fast-xml-parser "^5.7.3"
-    js-yaml "^4.1.1"
+    js-yaml "^4.3.2"
     json5 "^2.2.2"
     validate-npm-package-name "^3.0.0"
 
