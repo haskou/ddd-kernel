@@ -570,23 +570,20 @@
     eslint-plugin-unused-imports "^4.4.1"
     globals "^17.9.0"
 
-"@haskou/flow@2.0.1":
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@haskou/flow/-/flow-2.0.1.tgz#751a4a5ad7ef49de8dcffb26ba057889f02e59bf"
-  integrity sha512-s9bDL6sRJd6PYmnrqlv/nzghuZ9MWx3VilqZ/m/1WO20XXvPsA/Q2naFZ9AgKzqj96gQgC0xLSIMPiR005b93g==
+"@haskou/flow@3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@haskou/flow/-/flow-3.0.0.tgz#bf8e247f59eadaa9d162d0b5d4624f51995a3e24"
+  integrity sha512-hjTT1W2oJo6cVR6kGgk3TBiKU5YhUOpU20rZHQAUPYfxYXqB58m8aqV5i/MuQnt6LfJsyr3iEidiTgARrgIjzA==
   dependencies:
-    "@haskou/value-objects" "^2.13.1"
+    "@haskou/value-objects" "^7.0.2"
 
-"@haskou/value-objects@^2.13.1":
-  version "2.13.1"
-  resolved "https://registry.yarnpkg.com/@haskou/value-objects/-/value-objects-2.13.1.tgz#7ceaa3fbea5adf36c161b0b243467abe29ebfb45"
-  integrity sha512-stGgWXh3l0Xoj+xyf2wPmEuezc3pS1BxIMH3fl/6p9jx3Asc4KABwHN0eqmQ0o5mpNgaFmER758I4GFf0leLfQ==
+"@haskou/value-objects@^7.0.2":
+  version "7.1.0"
+  resolved "https://registry.yarnpkg.com/@haskou/value-objects/-/value-objects-7.1.0.tgz#54c5935085bf00ee5fb42f17d87ff38b7c15e83b"
+  integrity sha512-WS/sCUZHeCw6SSfe00ZSTDJr/BAZZj6OtgdWdL01Dgbr1kWwGnxXqr4fqEjuOf/YbI+dWOM+F5JzBRKkzuc3Zg==
   dependencies:
-    "@noble/ciphers" "^2.2.0"
-    "@noble/curves" "^2.2.0"
-    "@noble/hashes" "^2.0.1"
     buffer "^6.0.3"
-    tslib "^2.8.1"
+    uuid "^11.1.1"
 
 "@humanfs/core@^0.19.2":
   version "0.19.2"
@@ -709,23 +706,6 @@
   integrity sha512-QAfAMwNgnYxZ2C6D1HgeP7Gc4i/uvJRim415PCIL9ptRxWMNbWeLBYb2/9R4pGKny/s1FVu2JA2cxCUBUOggrA==
   dependencies:
     sparse-bitfield "^3.0.3"
-
-"@noble/ciphers@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@noble/ciphers/-/ciphers-2.2.0.tgz#84fb45ac9332925d643b80f89ceb0ea2f21dba95"
-  integrity sha512-Z6pjIZ/8IJcCGzb2S/0Px5J81yij85xASuk1teLNeg75bfT07MV3a/O2Mtn1I2se43k3lkVEcFaR10N4cgQcZA==
-
-"@noble/curves@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@noble/curves/-/curves-2.2.0.tgz#981be3aadc3bbfbcdb245e78cc97aa6f759246c2"
-  integrity sha512-T/BoHgFXirb0ENSPBquzX0rcjXeM6Lo892a2jlYJkqk83LqZx0l1Of7DzlKJ6jkpvMrkHSnAcgb5JegL8SeIkQ==
-  dependencies:
-    "@noble/hashes" "2.2.0"
-
-"@noble/hashes@2.2.0", "@noble/hashes@^2.0.1":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-2.2.0.tgz#22da1d16a469954fce877055d559900a6c73b63b"
-  integrity sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==
 
 "@nodable/entities@^2.2.0":
   version "2.2.0"
@@ -4197,11 +4177,6 @@ tslib@^1.8.1:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
   integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
-tslib@^2.8.1:
-  version "2.8.1"
-  resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.8.1.tgz#612efe4ed235d567e8aba5f2a5fab70280ade83f"
-  integrity sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
-
 tsscmp@1.0.6:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/tsscmp/-/tsscmp-1.0.6.tgz#85b99583ac3589ec4bfef825b5000aa911d605eb"
@@ -4357,6 +4332,11 @@ utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==
+
+uuid@^11.1.1:
+  version "11.1.1"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.1.1.tgz#f6d81d2e1c65d00762e5e29b16c5d2d995e208ad"
+  integrity sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==
 
 v8-compile-cache-lib@^3.0.1:
   version "3.0.1"
