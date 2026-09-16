@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, realpath, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -288,7 +288,9 @@ test('falls back to CONTAINER_BUILD when dependency injection options omit conta
 });
 
 test('uses default dependency injection paths from current working directory', async (context) => {
-  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const temporaryDirectory = await realpath(
+    await mkdtemp(path.join(tmpdir(), 'ddd-kernel-')),
+  );
   const sourceDirectory = path.join(temporaryDirectory, 'src');
   const originalContainerBuild = process.env.CONTAINER_BUILD;
   const previousDirectory = process.cwd();

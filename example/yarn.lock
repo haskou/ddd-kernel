@@ -148,7 +148,7 @@
     "@haskou/flow" "2.0.1"
     dotenv "^17.4.2"
     fs-extra "^11.4.0"
-    node-dependency-injection "3.8.0"
+    node-dependency-injection "4.3.0"
 
 "@haskou/flow@2.0.1":
   version "2.0.1"
@@ -167,6 +167,14 @@
     "@noble/hashes" "^2.0.1"
     buffer "^6.0.3"
     tslib "^2.8.1"
+
+"@haskou/value-objects@^7.0.2":
+  version "7.0.2"
+  resolved "https://registry.yarnpkg.com/@haskou/value-objects/-/value-objects-7.0.2.tgz#5c2c69be83f2b253ad93743902b8f81cdebab09f"
+  integrity sha512-K8kN+aSh0HscOCuV6OPwavTU9VbcmBUoLX/QKA6Nt8PB6tcwwhVe0R9eA4BXL7aSmwjHT8ZoXQ724v6iSrh1XA==
+  dependencies:
+    buffer "^6.0.3"
+    uuid "^11.1.1"
 
 "@isaacs/cliui@^9.0.0":
   version "9.0.0"
@@ -1096,10 +1104,10 @@ jackspeak@^4.1.1:
   dependencies:
     "@isaacs/cliui" "^9.0.0"
 
-js-yaml@^4.1.1:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.2.0.tgz#2bd9e85682dd91bd469afb809d816043b3d49524"
-  integrity sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==
+js-yaml@^4.3.2:
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.3.2.tgz#8e44fb14a2643c59726bb15787b5f1512cb3d3fb"
+  integrity sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==
   dependencies:
     argparse "^2.0.1"
 
@@ -1286,10 +1294,10 @@ negotiator@^1.0.0:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-1.0.0.tgz#b6c91bb47172d69f93cfd7c357bbb529019b5f6a"
   integrity sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==
 
-node-dependency-injection@3.8.0:
-  version "3.8.0"
-  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-3.8.0.tgz#ddd48b404dff0aae6b2e235077798b44d20dafbe"
-  integrity sha512-uktk6PCTu0fGq/ISnwYdXVb3RHzIOGZIkUagcRjVtQ2W7vvLUlyZfd6CZC27NjIWxybiTL95Ji+LAAvVzpCcPQ==
+node-dependency-injection@4.3.0:
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-4.3.0.tgz#4db4050ef46f99845c820f39ca6d81df387a4044"
+  integrity sha512-lYVH619HP2OmXOmY4ondjhN/OmBDtZfHUZY4vE9+o9QxNFFAupi1fKflGEsq11Bt+iIiyfjwZ+dWgmk3HVONtg==
   dependencies:
     "@babel/runtime" "^7.26.10"
     "@typescript-eslint/typescript-estree" "^5.23.0"
@@ -1297,7 +1305,7 @@ node-dependency-injection@3.8.0:
     commander "^8.3.0"
     console.table "^0.10.0"
     fast-xml-parser "^5.7.3"
-    js-yaml "^4.1.1"
+    js-yaml "^4.3.2"
     json5 "^2.2.2"
     validate-npm-package-name "^3.0.0"
 
@@ -1697,10 +1705,10 @@ tsutils@^3.21.0:
   dependencies:
     tslib "^1.8.1"
 
-tsx@^4.23.4:
-  version "4.23.4"
-  resolved "https://registry.yarnpkg.com/tsx/-/tsx-4.23.4.tgz#7e0b074f7f8105c19d389a54bac47eb1db02cf03"
-  integrity sha512-ZiUQ8oT/KzN51mJUWPqARYqwFLFJZtGZipRkw1ynHMr9vy3eU77m5yfF3Gzm6meEg/beW+lUu3fHYgskTN2oVQ==
+tsx@^4.23.13:
+  version "4.23.13"
+  resolved "https://registry.yarnpkg.com/tsx/-/tsx-4.23.13.tgz#393b8dd813d49e25aed7b1d7cbac6930da49ec08"
+  integrity sha512-BL5MGkRln6aDYhb0xbQlEAGw743BaZYWdbWtdJOBriYJboKgUUYCadFp2/FpBBZquBC/ezNBn7wMMPx7FDZUDw==
   dependencies:
     esbuild "~0.28.0"
   optionalDependencies:
@@ -1764,6 +1772,11 @@ utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==
+
+uuid@^11.1.1:
+  version "11.1.1"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.1.1.tgz#f6d81d2e1c65d00762e5e29b16c5d2d995e208ad"
+  integrity sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==
 
 validate-npm-package-name@^3.0.0:
   version "3.0.0"

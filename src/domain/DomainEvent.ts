@@ -19,6 +19,8 @@ export abstract class DomainEvent implements Event {
     this.causationId = causationId || eventId;
   }
 
+  public abstract eventName(): string;
+
   public encode(data: string): object {
     return JSON.parse(data) as object;
   }
@@ -56,6 +58,4 @@ export abstract class DomainEvent implements Event {
 
     return this;
   }
-
-  public abstract eventName(): string;
 }

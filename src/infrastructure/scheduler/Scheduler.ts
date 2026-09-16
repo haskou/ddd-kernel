@@ -15,6 +15,12 @@ export abstract class Scheduler {
     private readonly errorPolicy: SchedulerErrorPolicy = new DefaultSchedulerErrorPolicy(),
   ) {}
 
+  public abstract execute(): Promise<void>;
+
+  public abstract getCronExpression(): CronExpression;
+
+  public abstract getProcessName(): string;
+
   private parseCronExpression(): string {
     const expression = this.getCronExpression();
 
@@ -28,12 +34,6 @@ export abstract class Scheduler {
       `${expression.dayOfWeek ?? '*'}`
     );
   }
-
-  public abstract execute(): Promise<void>;
-
-  public abstract getCronExpression(): CronExpression;
-
-  public abstract getProcessName(): string;
 
   public async runOnce(): Promise<void> {
     const permit = this.executionSemaphore.tryAcquire();

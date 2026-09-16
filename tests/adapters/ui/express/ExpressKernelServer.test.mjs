@@ -543,6 +543,7 @@ test('runs the full HTTP extension pipeline in registration order', async () => 
       },
     ],
     kernel,
+    port: 0,
     postControllerMiddlewares: [
       (request, response, next) => {
         void request;
@@ -1040,6 +1041,32 @@ test('guards server access and close lifecycle', async () => {
   httpServer.close = close;
   await server.close();
   assert.throws(() => server.app, /HTTP server is not running/);
+});
+
+test('defaults to port 3000 when no port is configured', async (context) => {
+  let requestedPort;
+  const server = new ExpressKernelServer({
+    beforeControllersHooks: [
+      (app) => {
+        const listen = app.listen.bind(app);
+
+        context.mock.method(app, 'listen', (port, callback) => {
+          requestedPort = port;
+
+          return listen(0, callback);
+        });
+      },
+    ],
+    kernel: new Kernel(),
+  });
+
+  await server.run();
+
+  try {
+    assert.equal(requestedPort, 3000);
+  } finally {
+    await server.close();
+  }
 });
 
 test('rejects HTTP pipeline registration after the server is running', async () => {
