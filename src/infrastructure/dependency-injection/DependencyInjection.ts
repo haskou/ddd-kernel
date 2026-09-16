@@ -370,7 +370,8 @@ export class DependencyInjection implements ServiceResolver {
       return this.container.get<T>(registeredServiceId);
     }
 
-    return this.container.get<T>(serviceName);
+    // NDI 4 types only string IDs, but still resolves constructors and validates other tokens at runtime.
+    return this.container.get<T>(serviceName as string);
   }
 
   public hasService(serviceName: unknown): boolean {

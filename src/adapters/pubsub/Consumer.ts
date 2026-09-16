@@ -11,6 +11,8 @@ import { ConsumerMiddlewarePipeline } from './ConsumerMiddlewarePipeline.js';
 export abstract class Consumer implements KernelConsumer {
   constructor(private readonly consumer: DomainEventConsumer) {}
 
+  public abstract handler(event: DomainEvent): Promise<void>;
+
   private async runMiddleware(
     event: DomainEvent,
     consumerContext?: DomainEventConsumerContext,
@@ -42,8 +44,6 @@ export abstract class Consumer implements KernelConsumer {
   public abstract get exchange(): string;
 
   public abstract get queueName(): string;
-
-  public abstract handler(event: DomainEvent): Promise<void>;
 
   public async init(): Promise<void> {
     await this.consumer.consume(
