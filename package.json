@@ -257,7 +257,7 @@
   "dependencies": {
     "@haskou/flow": "2.0.1",
     "dotenv": "^17.4.2",
-    "fs-extra": "^11.4.0",
+    "fs-extra": "^11.4.1",
     "node-dependency-injection": "4.3.0"
   },
   "devDependencies": {
