@@ -168,10 +168,10 @@
     buffer "^6.0.3"
     tslib "^2.8.1"
 
-"@haskou/value-objects@^7.2.0":
-  version "7.2.0"
-  resolved "https://registry.yarnpkg.com/@haskou/value-objects/-/value-objects-7.2.0.tgz#41310168766463171a2bec509598fdf8b06a5d12"
-  integrity sha512-8cSAA+JnAE1V1IGGL9CFrMo5uEVAkYTdMxCyJotHcaatLayPqn0JJgbmcjc6j5D8p1kLfVYwd6dTjLkervCAdw==
+"@haskou/value-objects@^8.3.3":
+  version "8.3.3"
+  resolved "https://registry.yarnpkg.com/@haskou/value-objects/-/value-objects-8.3.3.tgz#17e824429bc2ff674147f6bc56d568c87a5dc734"
+  integrity sha512-S6JWZoAPXLuZo1Xnb7MHfhQ8/HEHZ5N/d1xdHTOjKNkTCvEC6b0ASC8p6xeRsaUzt+fDrHQnO3ig57SOXL5bfg==
 
 "@isaacs/cliui@^9.0.0":
   version "9.0.0"
