@@ -186,7 +186,7 @@ test('uses wildcards for omitted cron expression parts', async (context) => {
   assert.deepEqual(calls, ['* * * * * *']);
 });
 
-test('resolves legacy services through the active kernel container', () => {
+test('resolves services through the active kernel container', () => {
   class Service {}
 
   const service = new Service();

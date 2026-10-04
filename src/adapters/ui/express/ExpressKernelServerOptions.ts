@@ -23,12 +23,4 @@ export interface ExpressKernelServerOptions {
     RoutingControllersOptions,
     'controllers' | 'routePrefix'
   >;
-  /**
-   * @deprecated Prefer `hooks` with `phase: 'beforeErrors'`.
-   */
-  readonly staticHooks?: ExpressAppHook[];
-  /**
-   * @deprecated Prefer `hooks` with `phase: 'beforeErrors'`.
-   */
-  readonly swaggerHooks?: ExpressAppHook[];
 }

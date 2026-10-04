@@ -6,7 +6,7 @@ import { Route } from '../../../../dist/adapters/ui/routes/index.js';
 
 class TestRoute extends Route {}
 
-test('resolves legacy route services through the active kernel container', () => {
+test('resolves route services through the active kernel container', () => {
   class Service {}
 
   const service = new Service();

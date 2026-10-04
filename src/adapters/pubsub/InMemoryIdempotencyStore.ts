@@ -26,10 +26,6 @@ export class InMemoryIdempotencyStore implements IdempotencyStore {
   public has(key: string): boolean {
     return this.handledKeys.has(key);
   }
-
-  public mark(key: string): void {
-    this.handledKeys.add(key);
-  }
 }
 
 export default InMemoryIdempotencyStore;

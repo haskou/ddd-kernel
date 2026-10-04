@@ -547,7 +547,7 @@ test('ignores non-reference definition arguments while searching override refere
   assert.deepEqual(dependencyInjection.findReferencedServiceIds('literal'), []);
 });
 
-test('does not dump autowire legacy aliases into services.yaml', async () => {
+test('does not dump autowire aliases into services.yaml', async () => {
   const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
   const servicesYamlPath = path.join(temporaryDirectory, 'services.yaml');
 

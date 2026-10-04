@@ -37,10 +37,6 @@ export class ExpressKernelServer {
 
   private serverInstance: HttpServer | undefined;
 
-  private readonly staticHooks: ExpressAppHook[];
-
-  private readonly swaggerHooks: ExpressAppHook[];
-
   constructor(private readonly options: ExpressKernelServerOptions) {
     this.afterControllersHooks = this.copy(options.afterControllersHooks);
     this.beforeControllersHooks = this.copy(options.beforeControllersHooks);
@@ -52,8 +48,6 @@ export class ExpressKernelServer {
       options.postControllerMiddlewares,
     );
     this.preControllerMiddlewares = this.copy(options.preControllerMiddlewares);
-    this.staticHooks = this.copy(options.staticHooks);
-    this.swaggerHooks = this.copy(options.swaggerHooks);
   }
 
   private copy<Type>(items: Type[] | undefined): Type[] {
@@ -283,8 +277,6 @@ export class ExpressKernelServer {
     this.applyMiddlewares(app, this.postControllerMiddlewares);
     await this.runHooks(this.afterControllersHooks, app);
     await this.runPhaseHooks('afterControllers', app);
-    await this.runHooks(this.swaggerHooks, app);
-    await this.runHooks(this.staticHooks, app);
     await this.runPhaseHooks('beforeErrors', app);
 
     this.applyErrorHandlers(app);

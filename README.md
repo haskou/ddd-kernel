@@ -42,7 +42,7 @@ The package separates stable contracts from concrete infrastructure:
   at the composition root.
 
 Constructor injection is the preferred application pattern. Direct service
-lookup remains available for compatibility and integration boundaries, but it is
+lookup is available for composition and integration boundaries, but it is
 not the primary dependency model.
 
 ## Documentation

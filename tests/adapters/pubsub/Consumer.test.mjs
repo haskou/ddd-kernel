@@ -84,7 +84,7 @@ test('initializes the domain event consumer with metadata and middleware chain',
   ]);
 });
 
-test('resolves legacy services through the active kernel container', () => {
+test('resolves services through the active kernel container', () => {
   class Service {}
 
   const service = new Service();
@@ -236,31 +236,6 @@ test('releases claimed idempotency keys when handlers fail', async () => {
   await middleware.handle(event, async () => {}, context);
 
   assert.equal(await store.has('event-id'), true);
-});
-
-test('supports legacy idempotency stores without atomic claim', async () => {
-  const event = new TestDomainEvent('aggregate-id');
-  const context = {
-    eventId: 'event-id',
-    eventName: 'test.domain-event',
-    exchange: 'exchange',
-    kernel: new Kernel(),
-    metadata: {},
-    queueName: 'queue',
-  };
-  const handledKeys = new Set();
-  const calls = [];
-  const middleware = new IdempotencyConsumerMiddleware({
-    store: {
-      has: (key) => handledKeys.has(key),
-      mark: (key) => handledKeys.add(key),
-    },
-  });
-
-  await middleware.handle(event, async () => calls.push('first'), context);
-  await middleware.handle(event, async () => calls.push('second'), context);
-
-  assert.deepEqual(calls, ['first']);
 });
 
 test('allows retry middleware with zero attempts', async () => {
