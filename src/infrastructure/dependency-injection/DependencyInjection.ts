@@ -330,6 +330,7 @@ export class DependencyInjection implements ServiceResolver {
     if (this.options.containerBuild) {
       await this.ensureFolderExists(this.options.servicesYamlPath);
       this.autowire = new Autowire(this.container);
+      this.autowire.makeIdLegacy();
       this.autowire.serviceFile = new ServiceFile(
         this.options.servicesYamlPath,
         false,
