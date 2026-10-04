@@ -94,35 +94,8 @@ export class DependencyInjection implements ServiceResolver {
     this.container.set(id, value);
   }
 
-  private parentMatchesService(
-    parentId: string | null | undefined,
-    serviceClassName: string,
-  ): boolean {
-    if (!parentId) {
-      return false;
-    }
-
-    const parentName = Buffer.from(parentId, 'base64').toString('utf8');
-
-    return parentName.endsWith(`__${serviceClassName}__${serviceClassName}`);
-  }
-
-  private serviceIdMatchesService(
-    serviceId: string,
-    serviceClassName: string,
-  ): boolean {
-    const serviceName = Buffer.from(serviceId, 'base64').toString('utf8');
-
-    return serviceName.endsWith(`__${serviceClassName}__${serviceClassName}`);
-  }
-
-  private serviceIdReferencesService(
-    serviceId: string,
-    serviceClassName: string,
-  ): boolean {
-    const serviceName = Buffer.from(serviceId, 'base64').toString('utf8');
-
-    return serviceName.endsWith(`__${serviceClassName}`);
+  private idNamesService(id: string, serviceClassName: string): boolean {
+    return path.posix.basename(id) === serviceClassName;
   }
 
   private getReferenceId(value: unknown): string | undefined {
@@ -161,8 +134,10 @@ export class DependencyInjection implements ServiceResolver {
 
     const matches = [...this.definitions.entries()]
       .filter(([, definition]) => definition._abstract !== true)
-      .filter(([, definition]) =>
-        this.parentMatchesService(definition._parent, serviceClassName),
+      .filter(
+        ([, definition]) =>
+          definition._parent &&
+          this.idNamesService(definition._parent, serviceClassName),
       )
       .map(([id]) => id);
 
@@ -177,7 +152,7 @@ export class DependencyInjection implements ServiceResolver {
     }
 
     const matches = [...this.definitions.keys()].filter((id) =>
-      this.serviceIdMatchesService(id, serviceClassName),
+      this.idNamesService(id, serviceClassName),
     );
 
     return matches[matches.length - 1];
@@ -191,7 +166,7 @@ export class DependencyInjection implements ServiceResolver {
     }
 
     const matches = [...this.aliases.keys()].filter((id) =>
-      this.serviceIdMatchesService(id, serviceClassName),
+      this.idNamesService(id, serviceClassName),
     );
 
     return matches[matches.length - 1];
@@ -210,9 +185,7 @@ export class DependencyInjection implements ServiceResolver {
           .flatMap((definition) =>
             this.getDefinitionArgumentReferences(definition),
           )
-          .filter((id) =>
-            this.serviceIdReferencesService(id, serviceClassName),
-          ),
+          .filter((id) => this.idNamesService(id, serviceClassName)),
       ),
     ];
   }
@@ -330,7 +303,6 @@ export class DependencyInjection implements ServiceResolver {
     if (this.options.containerBuild) {
       await this.ensureFolderExists(this.options.servicesYamlPath);
       this.autowire = new Autowire(this.container);
-      this.autowire.makeIdLegacy();
       this.autowire.serviceFile = new ServiceFile(
         this.options.servicesYamlPath,
         false,
