@@ -853,16 +853,16 @@ test('throws when typed environment variable choices do not match', () => {
   }
 });
 
-test('generates base64 service ids that class-based resolution can match', async () => {
+test('generates readable service ids that class-based resolution can match', async () => {
   const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
   const sourceDirectory = path.join(temporaryDirectory, 'src');
   const servicesYamlPath = path.join(temporaryDirectory, 'services.yaml');
 
   await import('node:fs/promises').then(({ mkdir }) =>
-    mkdir(sourceDirectory, { recursive: true }),
+    mkdir(path.join(sourceDirectory, 'application'), { recursive: true }),
   );
   await writeFile(
-    path.join(sourceDirectory, 'Service.ts'),
+    path.join(sourceDirectory, 'application', 'Service.ts'),
     'export default class Service {}\n',
   );
 
@@ -876,8 +876,11 @@ test('generates base64 service ids that class-based resolution can match', async
 
   const serviceIds = [
     ...(await readFile(servicesYamlPath, 'utf8')).matchAll(/^ {2}(\S+):$/gm),
-  ].map(([, id]) => Buffer.from(id, 'base64').toString('utf8'));
+  ].map(([, id]) => id);
 
-  assert.equal(serviceIds.length, 1);
-  assert.ok(serviceIds[0].endsWith('__Service__Service'), serviceIds[0]);
+  assert.deepEqual(serviceIds, ['application/Service']);
+  assert.equal(
+    kernel.di.getService(class Service {}).constructor.name,
+    'Service',
+  );
 });

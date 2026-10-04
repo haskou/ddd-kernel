@@ -29,10 +29,7 @@ class MessageBus extends DomainEventPublisher {
   async publish() {}
 }
 
-const serviceIdFor = (ClassDefinition) =>
-  Buffer.from(
-    `${ClassDefinition.name}.ts__${ClassDefinition.name}__${ClassDefinition.name}`,
-  ).toString('base64');
+const serviceIdFor = (ClassDefinition) => `services/${ClassDefinition.name}`;
 
 test('filters ignorable autowire warnings and forwards actionable logs', () => {
   const calls = [];
@@ -306,41 +303,8 @@ test('registers override classes that are not already in the container', async (
   );
 });
 
-test('overrides unresolved argument references generated for external package imports', async () => {
-  class ExternalRepository {}
-
-  class ServiceThatNeedsExternalRepository {}
-
-  const dependencyInjection = new DependencyInjection({
-    containerBuild: true,
-    overrides: [
-      {
-        token: ExternalRepository,
-        useClass: InMemoryRepository,
-      },
-    ],
-    servicesYamlPath: '/tmp/services.yaml',
-    sourceDirectory: process.cwd(),
-  });
-  const serviceId = serviceIdFor(ServiceThatNeedsExternalRepository);
-  const externalReferenceId = Buffer.from(
-    'src__application____vendor__package__ExternalRepository',
-  ).toString('base64');
-
-  dependencyInjection.container
-    .register(serviceId, ServiceThatNeedsExternalRepository)
-    .addArgument(new Reference(externalReferenceId));
-  dependencyInjection.applyOverrides();
-  await dependencyInjection.container.compile();
-
-  assert.ok(
-    dependencyInjection.getService(externalReferenceId) instanceof
-      InMemoryRepository,
-  );
-});
-
-test('overrides unresolved argument references generated for kernel subpath imports', async () => {
-  class ServiceThatNeedsDomainEventPublisher {}
+test('overrides unresolved argument references to contracts without a service definition', async () => {
+  class ServiceThatNeedsMessageBus {}
 
   const dependencyInjection = new DependencyInjection({
     containerBuild: true,
@@ -353,19 +317,17 @@ test('overrides unresolved argument references generated for kernel subpath impo
     servicesYamlPath: '/tmp/services.yaml',
     sourceDirectory: process.cwd(),
   });
-  const serviceId = serviceIdFor(ServiceThatNeedsDomainEventPublisher);
-  const externalReferenceId = Buffer.from(
-    'src__application____haskou__ddd-kernel__domain__DomainEventPublisher',
-  ).toString('base64');
+  const serviceId = serviceIdFor(ServiceThatNeedsMessageBus);
+  const contractReferenceId = 'shared/infrastructure/DomainEventPublisher';
 
   dependencyInjection.container
-    .register(serviceId, ServiceThatNeedsDomainEventPublisher)
-    .addArgument(new Reference(externalReferenceId));
+    .register(serviceId, ServiceThatNeedsMessageBus)
+    .addArgument(new Reference(contractReferenceId));
   dependencyInjection.applyOverrides();
   await dependencyInjection.container.compile();
 
   assert.ok(
-    dependencyInjection.getService(externalReferenceId) instanceof MessageBus,
+    dependencyInjection.getService(contractReferenceId) instanceof MessageBus,
   );
 });
 
@@ -436,9 +398,7 @@ test('reads services.yaml', async () => {
     'LoadedRepository.cjs',
   );
   const servicesYamlPath = path.join(temporaryDirectory, 'services.yaml');
-  const serviceId = Buffer.from(
-    'LoadedRepository.cjs__LoadedRepository__LoadedRepository',
-  ).toString('base64');
+  const serviceId = 'LoadedRepository';
 
   await writeFile(
     loadedRepositoryPath,
@@ -571,11 +531,18 @@ test('ignores non-reference definition arguments while searching override refere
   );
   assert.deepEqual(dependencyInjection.getDefinitionArgumentReferences({}), []);
   assert.equal(
-    dependencyInjection.serviceIdReferencesService(
+    dependencyInjection.idNamesService(
       serviceIdFor(ConcreteRepository),
       'ConcreteRepository',
     ),
     true,
+  );
+  assert.equal(
+    dependencyInjection.idNamesService(
+      'services/PrefixedConcreteRepository',
+      'ConcreteRepository',
+    ),
+    false,
   );
   assert.deepEqual(dependencyInjection.findReferencedServiceIds('literal'), []);
 });
