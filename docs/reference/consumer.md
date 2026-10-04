@@ -66,7 +66,6 @@ kernel.registerConsumerMiddleware(
 );
 ```
 
-Use a custom `IdempotencyStore` for durable idempotency. Prefer stores that
-implement atomic `claim`, `commit` and `release` methods so duplicate messages
-cannot pass a non-atomic `has`/`mark` check concurrently. The in-memory store is
+Use a custom `IdempotencyStore` for durable idempotency. Stores must implement atomic `claim`, `commit` and `release` methods so
+duplicate messages cannot be processed concurrently. The in-memory store is
 only useful for tests and single-process applications.

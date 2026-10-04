@@ -279,11 +279,11 @@ export class DependencyInjection implements ServiceResolver {
 
   private trackAutowireAliasIds(autowire: Autowire): Set<string> {
     const internals = autowire as unknown as AutowireInternals;
-    const createLegacyServiceId = internals._getLegacyServiceId.bind(autowire);
+    const createServiceId = internals._getLegacyServiceId.bind(autowire);
     const aliasIds = new Set<string>();
 
     internals._getLegacyServiceId = async (...args) => {
-      const id = await createLegacyServiceId(...args);
+      const id = await createServiceId(...args);
 
       if (!this.container.hasAlias(id) && !this.container.hasDefinition(id)) {
         aliasIds.add(id);

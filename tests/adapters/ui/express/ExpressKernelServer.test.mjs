@@ -560,26 +560,6 @@ test('runs the full HTTP extension pipeline in registration order', async () => 
         next();
       },
     ],
-    staticHooks: [
-      (app) => {
-        app.use((request, response, next) => {
-          void request;
-          void response;
-          calls.push('options:static-hook');
-          next();
-        });
-      },
-    ],
-    swaggerHooks: [
-      (app) => {
-        app.use((request, response, next) => {
-          void request;
-          void response;
-          calls.push('options:swagger-hook');
-          next();
-        });
-      },
-    ],
   });
 
   server
@@ -668,8 +648,6 @@ test('runs the full HTTP extension pipeline in registration order', async () => 
       'registered:after-controller-hook',
       'options:after-controller-phase',
       'registered:after-controller-phase',
-      'options:swagger-hook',
-      'options:static-hook',
       'registered:before-errors-phase',
     ]);
   } finally {

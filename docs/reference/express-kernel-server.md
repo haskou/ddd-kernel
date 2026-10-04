@@ -113,13 +113,11 @@ Hook order is:
 6. `postControllerMiddlewares`
 7. `afterControllersHooks`
 8. `hooks` with `phase: 'afterControllers'`
-9. `swaggerHooks`
-10. `staticHooks`
-11. `hooks` with `phase: 'beforeErrors'`
-12. `errorHandlers`
+9. `hooks` with `phase: 'beforeErrors'`
+10. `errorHandlers`
 
-`swaggerHooks` and `staticHooks` remain available for compatibility. New
-integrations should use `hooks` with an explicit phase.
+Use `hooks` with an explicit phase for Swagger, static assets and any other
+application-level wiring.
 
 You can also register the pipeline imperatively before the server starts:
 

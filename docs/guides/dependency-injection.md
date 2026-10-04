@@ -7,8 +7,7 @@ pattern where classes are resolved by class definition:
 const finder = Kernel.di.getService<UserByIdFinder>(UserByIdFinder);
 ```
 
-That lookup is intended for composition boundaries and compatibility with base
-classes. Prefer constructor injection inside application code:
+That lookup is intended for composition boundaries and base classes such as `Route`. Prefer constructor injection inside application code:
 
 ```ts
 export default class UserByIdRoute extends Route {
@@ -44,8 +43,8 @@ await kernel.dependencyInjection({
 ```
 
 If `containerBuild` is omitted, the kernel falls back to
-`CONTAINER_BUILD=true`. That keeps older applications working while allowing new
-bootstraps to keep the choice close to application startup code.
+`CONTAINER_BUILD=true`. Passing the option keeps the choice close to application
+startup code.
 
 Avoid passing `Kernel.di` into consumers, schedulers or services as a normal
 dependency. It makes tests depend on global container state and hides the real
