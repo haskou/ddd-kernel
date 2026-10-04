@@ -1,3 +1,4 @@
+export * from './AutowireInternals.js';
 export * from './AutowireWarningFilter.js';
 export * from './ClassDependencyOverride.js';
 export * from './ContainerDefinition.js';

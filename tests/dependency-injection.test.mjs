@@ -546,3 +546,31 @@ test('ignores non-reference definition arguments while searching override refere
   );
   assert.deepEqual(dependencyInjection.findReferencedServiceIds('literal'), []);
 });
+
+test('does not dump autowire legacy aliases into services.yaml', async () => {
+  const temporaryDirectory = await mkdtemp(path.join(tmpdir(), 'ddd-kernel-'));
+  const servicesYamlPath = path.join(temporaryDirectory, 'services.yaml');
+
+  await writeFile(
+    path.join(temporaryDirectory, 'Plain.ts'),
+    'export default class Plain {}\n',
+  );
+
+  const dependencyInjection = new DependencyInjection({
+    containerBuild: true,
+    servicesYamlPath,
+    sourceDirectory: temporaryDirectory,
+  });
+
+  await dependencyInjection.compile();
+
+  const serviceIds = [
+    ...(await readFile(servicesYamlPath, 'utf8')).matchAll(/^ {2}([^\s:]+):/gm),
+  ].map(([, id]) => id);
+
+  assert.deepEqual(serviceIds, ['Plain']);
+  assert.equal(
+    dependencyInjection.getService(class Plain {}).constructor.name,
+    'Plain',
+  );
+});

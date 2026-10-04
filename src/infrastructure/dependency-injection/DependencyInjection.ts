@@ -8,6 +8,7 @@ import {
 import path from 'node:path';
 
 import type { ServiceResolver } from '../../contracts/index.js';
+import type { AutowireInternals } from './AutowireInternals.js';
 import type { ContainerInternals } from './ContainerInternals.js';
 import type { DefinitionMetadata } from './DefinitionMetadata.js';
 import type { DependencyInjectionOptions } from './DependencyInjectionOptions.js';
@@ -17,7 +18,6 @@ import { AutowireWarningFilter } from './AutowireWarningFilter.js';
 
 export class DependencyInjection implements ServiceResolver {
   private static configuredInstance: DependencyInjection | undefined;
-  private autowire: Autowire | undefined;
   private loader: YamlFileLoader | undefined;
   private readonly container: ContainerBuilder;
   private readonly overrideTokenIds = new Map<unknown, string>();
@@ -277,15 +277,38 @@ export class DependencyInjection implements ServiceResolver {
     }
   }
 
-  private async processAutowire(): Promise<void> {
+  private trackAutowireAliasIds(autowire: Autowire): Set<string> {
+    const internals = autowire as unknown as AutowireInternals;
+    const createLegacyServiceId = internals._getLegacyServiceId.bind(autowire);
+    const aliasIds = new Set<string>();
+
+    internals._getLegacyServiceId = async (...args) => {
+      const id = await createLegacyServiceId(...args);
+
+      if (!this.container.hasAlias(id) && !this.container.hasDefinition(id)) {
+        aliasIds.add(id);
+      }
+
+      return id;
+    };
+
+    return aliasIds;
+  }
+
+  private async processAutowire(autowire: Autowire): Promise<void> {
     const previousLogger = this.container.logger;
+    const autowireAliasIds = this.trackAutowireAliasIds(autowire);
 
     this.container.logger = new AutowireWarningFilter(previousLogger);
 
     try {
-      await this.autowire?.process();
+      await autowire.process();
     } finally {
       this.container.logger = previousLogger;
+    }
+
+    for (const id of autowireAliasIds) {
+      this.aliases.delete(id);
     }
   }
 
@@ -302,12 +325,13 @@ export class DependencyInjection implements ServiceResolver {
   public async compile(): Promise<void> {
     if (this.options.containerBuild) {
       await this.ensureFolderExists(this.options.servicesYamlPath);
-      this.autowire = new Autowire(this.container);
-      this.autowire.serviceFile = new ServiceFile(
+      const autowire = new Autowire(this.container);
+
+      autowire.serviceFile = new ServiceFile(
         this.options.servicesYamlPath,
         false,
       );
-      await this.processAutowire();
+      await this.processAutowire(autowire);
     } else {
       this.loader = new YamlFileLoader(this.container);
       await this.loader.load(this.options.servicesYamlPath);
