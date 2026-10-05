@@ -570,10 +570,10 @@
     eslint-plugin-unused-imports "^4.4.1"
     globals "^17.9.0"
 
-"@haskou/flow@3.0.1":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@haskou/flow/-/flow-3.0.1.tgz#f495048d911983f2748ffbed2465bedb94316dc9"
-  integrity sha512-/9Ke1gbg1YpgLTsbHvYadQX9leyVD2/YJuXXaypnmywVTiNVIitan7GPv9LJNRmD6vPdIbrNSP32S8U2WRkH7Q==
+"@haskou/flow@3.0.2":
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/@haskou/flow/-/flow-3.0.2.tgz#07980ebea32d479626af8f86fe7890ee6ce566cd"
+  integrity sha512-x1ORdTrCCde7O4gNQdknsvDVOcFq/rpDAaUT2Ex9XyS6f6M8Zb2PDGH1NxhPVL7tmifJcEO9I9SjZmZniuyo5w==
   dependencies:
     "@haskou/value-objects" "^8.3.3"
 
