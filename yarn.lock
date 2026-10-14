@@ -2019,10 +2019,10 @@ dir-glob@^3.0.1:
   dependencies:
     path-type "^4.0.0"
 
-dotenv@^18.0.7:
-  version "18.0.7"
-  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-18.0.7.tgz#ee6bec88c59298d9b218acdf49377f2c110a7698"
-  integrity sha512-QEvMEF8ca3GNZJJnAbOgxpj5ULhBvnMcURp+XKrtvqFNPgjBvYoswQ0Jl2cO7JzCjxZjJhr9ZuIEhlrRxMft/Q==
+dotenv@^18.0.8:
+  version "18.0.8"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-18.0.8.tgz#e51b1e4424d73df5e17802954dc503aaa565bd1a"
+  integrity sha512-2KDeoFoK/zRtcnbunCDlLG5VWVMcyqeQc6iK65o231nfNAcuGrKoqUQfJFUtBI+QlShk5HKIHxwebBtUl3rEfA==
 
 dunder-proto@^1.0.1:
   version "1.0.1"
@@ -3322,10 +3322,10 @@ node-cron@^4.6.0:
   resolved "https://registry.yarnpkg.com/node-cron/-/node-cron-4.6.0.tgz#5c854d4aeebade26cf6df79a795e8a4bae47583f"
   integrity sha512-Si/bzYiKRHOB8/a99T2+SDGN582ONDMSTlJr5oCkT6GtnqPjZ2s10eoQRYkW9ZHwjVxONL+W8Fb+qR0AHMQsdg==
 
-node-dependency-injection@4.3.0:
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-4.3.0.tgz#4db4050ef46f99845c820f39ca6d81df387a4044"
-  integrity sha512-lYVH619HP2OmXOmY4ondjhN/OmBDtZfHUZY4vE9+o9QxNFFAupi1fKflGEsq11Bt+iIiyfjwZ+dWgmk3HVONtg==
+node-dependency-injection@4.3.1:
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-4.3.1.tgz#02c2d10fd10c059da4824bdf5d12b0835d08bfd3"
+  integrity sha512-Tzn6GXlVRdp8Fr3xFZwwHs3gg+NjGl5FJYSh/mKemuhNzaNkL1b1WBm0nf8gjeWfFUlBjSk/kI43QkUAh85c0A==
   dependencies:
     "@babel/runtime" "^7.26.10"
     "@typescript-eslint/typescript-estree" "^5.23.0"
