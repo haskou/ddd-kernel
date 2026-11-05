@@ -333,5 +333,8 @@
     "ws": {
       "optional": true
     }
+  },
+  "resolutions": {
+    "node-dependency-injection/@typescript-eslint/typescript-estree": "^8.70.0"
   }
 }
