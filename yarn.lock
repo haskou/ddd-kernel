@@ -1481,10 +1481,10 @@ algoliasearch@^5.14.2:
     "@algolia/requester-fetch" "5.55.1"
     "@algolia/requester-node-http" "5.55.1"
 
-amqplib@^2.4.0:
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/amqplib/-/amqplib-2.4.0.tgz#16841501b4d0a8fcb78ea9bdb1f68c8a4a2c019d"
-  integrity sha512-HNxvtv3etFqFNTJZlXCQLGljtxghyY7Wz9elG7qHMfj4O2Fdpd+XrQuJ+4NQ6M7+9NjGHNk5XncNsnb1nqIPYw==
+amqplib@^2.4.1:
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/amqplib/-/amqplib-2.4.1.tgz#c872c6c2eda6486790386534eabac81e21ad940f"
+  integrity sha512-5J2/ULpAfGNFAaMoh+ezXezvu2Ht72Sr7k223P/NP1QZGs1c29ivlzWGDSqcQU0ZmBeiyDzxGavB0N/3dC8TIA==
 
 ansi-regex@^6.2.2:
   version "6.3.0"
