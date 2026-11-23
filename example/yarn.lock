@@ -143,12 +143,12 @@
   integrity sha512-Waj1cwPXJDucOib4a3bAISsKJVb15MKi9IvmTI/7ssVEm6sywXGjVJDhl6/umt1pK1ZS7PacXU3A1PmFKHEZ2w==
 
 "@haskou/ddd-kernel@file:..":
-  version "4.0.7"
+  version "4.0.9"
   dependencies:
     "@haskou/flow" "3.0.2"
-    dotenv "^18.0.9"
+    dotenv "^18.0.10"
     fs-extra "^11.4.1"
-    node-dependency-injection "4.3.2"
+    node-dependency-injection "4.3.3"
 
 "@haskou/flow@3.0.2":
   version "3.0.2"
@@ -583,10 +583,10 @@ dir-glob@^3.0.1:
   dependencies:
     path-type "^4.0.0"
 
-dotenv@^18.0.9:
-  version "18.0.9"
-  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-18.0.9.tgz#5c565760ce7e6fb69f9477ebcd1a3b64c766f9c8"
-  integrity sha512-3fVOW4cB02R066PUSwn8O4TJyz9NckQl7F81blIbaq9jKBm2tSmOKky7ZHIXzGvkVPXCSn6jkpziBPZdGFs8Tw==
+dotenv@^18.0.10:
+  version "18.0.10"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-18.0.10.tgz#4171e67ba539a3d1513d7cbc51b8124e60714d28"
+  integrity sha512-89FAA1xchzK2mxVWdr5F/0rldwiueXs6zJM86rO66EzekR1iBdiXRthyG+m5GvkJaFH3C2LESzamTkgndmLT2A==
 
 dunder-proto@^1.0.1:
   version "1.0.1"
@@ -1250,10 +1250,10 @@ negotiator@^1.0.0:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-1.0.0.tgz#b6c91bb47172d69f93cfd7c357bbb529019b5f6a"
   integrity sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==
 
-node-dependency-injection@4.3.2:
-  version "4.3.2"
-  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-4.3.2.tgz#ea65d99129a4728b9863a6c532849a8ed13861f1"
-  integrity sha512-ETZUmwLT6e3vFszSQdKKetgqVv/d/4xKXcXnw24Jvo3qx+gU0AHzZwJZ0MIduOopf0BJl6xKqB7s0C7aUL581Q==
+node-dependency-injection@4.3.3:
+  version "4.3.3"
+  resolved "https://registry.yarnpkg.com/node-dependency-injection/-/node-dependency-injection-4.3.3.tgz#d82bb2e6e5bc0a095f6ef83d26426e317d975227"
+  integrity sha512-BiuSUkc3nEzbuyswc+Th1VNU/eUlKy7N2OjAmuW32Qc8R+RFi9QElA+3gxdVlkPgMNNocs/fi2bAcrncR/aBqQ==
   dependencies:
     "@babel/runtime" "^7.26.10"
     "@typescript-eslint/typescript-estree" "^5.23.0"
