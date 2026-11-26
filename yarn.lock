@@ -1061,10 +1061,10 @@
   dependencies:
     undici-types "~8.3.0"
 
-"@types/node@^26.6.7":
-  version "26.6.7"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.6.7.tgz#882494202d3e60d3b83829bc4f9be7039458874a"
-  integrity sha512-tovuRfrUILu6v46bMG+BgXxMvsqPBx2WO2as8Rpln+JTff1dbexMtAM4KFTejmL0axsnSWViCW7MecUQpLuBRA==
+"@types/node@^26.6.11":
+  version "26.6.11"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.6.11.tgz#17799a1ddc1edfc99222a906a0952b3c9be8794a"
+  integrity sha512-uUyQ2XLEz+EXh34lmS3GhKrkqn/8FU7KUiKRpk347At2bmnMVWss45yz8b4FG/tUtmV1tV/+TVkITItPROyeeQ==
   dependencies:
     undici-types "~8.9.0"
 
@@ -1481,10 +1481,10 @@ algoliasearch@^5.14.2:
     "@algolia/requester-fetch" "5.55.1"
     "@algolia/requester-node-http" "5.55.1"
 
-amqplib@^2.4.1:
-  version "2.4.1"
-  resolved "https://registry.yarnpkg.com/amqplib/-/amqplib-2.4.1.tgz#c872c6c2eda6486790386534eabac81e21ad940f"
-  integrity sha512-5J2/ULpAfGNFAaMoh+ezXezvu2Ht72Sr7k223P/NP1QZGs1c29ivlzWGDSqcQU0ZmBeiyDzxGavB0N/3dC8TIA==
+amqplib@^2.4.2:
+  version "2.4.2"
+  resolved "https://registry.yarnpkg.com/amqplib/-/amqplib-2.4.2.tgz#02953095e7d28750ecf6fd2e8cef88ac5d329b74"
+  integrity sha512-FjhULAQ7jwjs8bi1eAwSyUfiY0tbyi8vsh4iRiHblxj2+QETfJcVobTQ1u919ARPq0TAxSR06m2gO0yp/ccgdw==
 
 ansi-regex@^6.2.2:
   version "6.3.0"
